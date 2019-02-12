@@ -403,6 +403,11 @@ public class VirtualCrate {
         }else{
             virtualBalances.put(player.getUniqueId().toString(),count);
         }
+        try {
+            DBReader.saveHuskyData();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
     public void givePlayersVirtualKeys(Collection<Player> players, int count){
 
@@ -413,6 +418,10 @@ public class VirtualCrate {
                 virtualBalances.put(player.getUniqueId().toString(),count);
             }
         }
-
+        try {
+            DBReader.saveHuskyData();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
