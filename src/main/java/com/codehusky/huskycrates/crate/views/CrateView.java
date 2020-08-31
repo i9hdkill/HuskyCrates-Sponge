@@ -67,10 +67,7 @@ public class CrateView {
         LangData thisData = giveToPlayer.getLangData();
         if (!giveToPlayer.treatAsSingle() && giveToPlayer.getRewards().size() == 1 && giveToPlayer.getRewards().get(0) instanceof ItemStack) {
             if (((ItemStack) giveToPlayer.getRewards().get(0)).getQuantity() > 1) {
-                    /*ourplr.sendMessage(Text.of("You won ", TextColors.YELLOW,
-                            ((ItemStack) giveToPlayer.getReward().getReward()).getQuantity() + " ",
-                            TextSerializers.FORMATTING_CODE.deserialize(giveToPlayer.getReward().getRewardName()), TextColors.RESET, " from a ",
-                            TextSerializers.FORMATTING_CODE.deserialize(vc.displayName), TextColors.RESET, "!"));*/
+                   
                 ourplr.sendMessage(TextSerializers.FORMATTING_CODE.deserialize(
                         thisData.formatter(thisData.rewardMessage, ((ItemStack) giveToPlayer.getRewards().get(0)).getQuantity() + "", ourplr, vc, giveToPlayer, null, null)
                 ));

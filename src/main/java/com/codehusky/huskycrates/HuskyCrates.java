@@ -13,12 +13,10 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
@@ -37,15 +35,12 @@ import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.cause.Cause;
-import org.spongepowered.api.event.cause.EventContext;
-import org.spongepowered.api.event.cause.EventContextKeys;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.entity.SpawnEntityEvent;
 import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
-import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.plugin.Dependency;
@@ -58,20 +53,21 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-import org.spongepowered.api.world.extent.Extent;
 import com.codehusky.huskycrates.lang.LangData;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
  * Created by lokio on 12/28/2016.
  */
-@SuppressWarnings("deprecation")
+
 @Plugin(id="huskycrates", name = "HuskyCrates", version = "1.8.0", description = "A CratesReloaded Replacement for Sponge? lol",dependencies = {@Dependency(id="huskyui",version = "0.2.1")})
 public class HuskyCrates {
     //@Inject
@@ -88,36 +84,18 @@ public class HuskyCrates {
     @Inject
     @DefaultConfig(sharedRoot = false)
     public ConfigurationLoader<CommentedConfigurationNode> crateConfig;
-
-    private ArrayList<Extent> pendingExtents = new ArrayList<>();
     public Cause genericCause;
     public Scheduler scheduler;
     public CrateUtilities crateUtilities = new CrateUtilities(this);
     public String huskyCrateIdentifier = "☼1☼2☼3HUSKYCRATE-";
     public String armorStandIdentifier = "ABABABAB-CDDE-0000-8374-CAAAECAAAECA";
     public static HuskyCrates instance;
-    public HuskyAPI huskyAPI;
     public LangData langData = new LangData();
     public Set<BlockType> validCrateBlocks = new HashSet<>();
-    private boolean forceStop = false;
     @Listener
     public void gameInit(GamePreInitializationEvent event){
         logger = LoggerFactory.getLogger(pC.getName());
         instance = this;
-        huskyAPI = new HuskyAPI();
-        for(PluginContainer pc: Sponge.getPluginManager().getPlugins()){
-            if(pc.getId().equalsIgnoreCase("inventorytweaks")||pc.getId().equalsIgnoreCase("inventorysorter")||pc.getId().equalsIgnoreCase("mousetweaks")){
-                logger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                logger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                logger.error(pc.getName() + " is loaded! This plugin or mod is on a blacklist for HuskyCrates, and as a result, HuskyCrates is not starting. ");
-                logger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                logger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                forceStop = true;
-
-            }
-        }
-        if(forceStop)
-            return;
 
         CommentedConfigurationNode conf = null;
         try {
@@ -130,107 +108,23 @@ public class HuskyCrates {
         } catch (Exception e) {
             crateUtilities.exceptionHandler(e);
         }
-
-
-        //logger.info("Let's not init VCrates here anymore. ://)");
-
-
     }
+    
     @Listener
     public void gameStarted(GameStartedServerEvent event){
-
-        if(forceStop) {
-            logger.error("Since a blacklisted mod is loaded, HuskyCrates will not start. Please check higher in your logs for the reasoning.");
-            return;
-        }
-
         HuskyCommandManager huskyCommandManager = new HuskyCommandManager();
 
         scheduler = Sponge.getScheduler();
-        //genericCause = Cause.of(EventContext.);
         Sponge.getCommandManager().register(this, huskyCommandManager.getCrateSpec(), "crate");
         Sponge.getCommandManager().register(this, huskyCommandManager.getHuskySpec(), "husky","huskycrates","hc");
         logger.info("Crates has been started.");
     }
 
     public OutOfDateData oodd = new OutOfDateData();
-    public void checkVersion() {
-        Sponge.getScheduler().createTaskBuilder().async().execute(new Consumer<Task>() {
-            @Override
-            public void accept(Task task) {
-                try {
-                    JSONObject obj = JsonReader.readJsonFromUrl("https://api.github.com/repos/codehusky/HuskyCrates-Sponge/releases");
-                    boolean foundLatest = false;
-                    JSONObject newPre = null;
-                    for(int i = 0; i < obj.getJSONArray("releases").length() && !foundLatest; i++) {
-                        if(obj.getJSONArray("releases").getJSONObject(i).getBoolean("prerelease") && !pC.getVersion().get().contains("PRE")){
-                            if(newPre == null) {
-                                newPre = obj.getJSONArray("releases").getJSONObject(i);
-                                if(newPre.getString("tag_name").contains(pC.getVersion().get())){
-                                    newPre = null;
-                                }
-                            }
-                            continue;
-                        }
-                        foundLatest = true;
 
-                        if(obj.getJSONArray("releases").getJSONObject(i).getString("tag_name").equals("v" + pC.getVersion().get())){
-                            oodd = new OutOfDateData();
-                            logger.info("----------------------------------------------------");
-                            logger.info("HuskyCrates is up to date.");
-                            logger.info("Running v" + pC.getVersion().get());
-                            logger.info("----------------------------------------------------");
-                        } else if (newPre != null) {
-                            oodd = new OutOfDateData();
-                            logger.warn("----------------------------------------------------");
-                            logger.warn("HuskyCrates is up to date, but a pre-release is out.");
-                            logger.warn("Running v" + pC.getVersion().get());
-                            logger.warn("PreRelease: " + newPre.getString("tag_name"));
-                            logger.warn("----------------------------------------------------");
-                        }else {
-                            String latestTag = obj.getJSONArray("releases").getJSONObject(0).getString("tag_name");
-                            String remoteVersion = latestTag.replace("v","");
-                            String[] remoteSplit = remoteVersion.split("\\.");
-                            long rvSum = 0;
-                            for(int ri = 0; ri < remoteSplit.length; ri++){
-                                String[] fixer = remoteSplit[ri].split("-");
-                                rvSum += Integer.parseInt(fixer[0]) * Math.pow(10,(3-ri-1));
-                            }
-                            String[] localSplit = pC.getVersion().get().split("\\.");
-                            long lSum = 0;
-                            for(int li = 0; li < localSplit.length; li++){
-                                String[] fixer = localSplit[li].split("-");
-                                lSum += Integer.parseInt(fixer[0]) * Math.pow(10,(3-li-1));
-                            }
-                            boolean preCheck = latestTag.contains(pC.getVersion().get()) && obj.getJSONArray("releases").getJSONObject(0).getBoolean("prerelease");
-                            boolean releaseCheck = rvSum > lSum;
-                            if(preCheck && !releaseCheck || !preCheck && !releaseCheck){
-                                oodd = new OutOfDateData();
-                                logger.warn("----------------------------------------------------");
-                                logger.warn("HuskyCrates is running a non-release version.");
-                                logger.warn("Running v" + pC.getVersion().get());
-                                logger.warn("----------------------------------------------------");
-                            }else {
-                                //we're behind
-                                oodd = new OutOfDateData(obj.getJSONArray("releases").getJSONObject(i).getString("tag_name"));
-                                logger.error("----------------------------------------------------");
-                                logger.error("Your version of HuskyCrates is out of date!");
-                                logger.error("Latest: " + obj.getJSONArray("releases").getJSONObject(i).getString("tag_name"));
-                                logger.error("Running: v" + pC.getVersion().get());
-                                logger.error("Check GitHub Releases for downloads.");
-                                logger.error("----------------------------------------------------");
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).submit(this);
-    }
     public void removeArmorstands() {
-        for(World bit: Sponge.getServer().getWorlds()) {
-            for (Entity ent : bit.getEntities()) {
+        for(World world: Sponge.getServer().getWorlds()) {
+            for (Entity ent : world.getEntities()) {
                 if (ent instanceof ArmorStand) {
                     ArmorStand arm = (ArmorStand) ent;
                     if (arm.getCreator().isPresent()) {
@@ -242,14 +136,9 @@ public class HuskyCrates {
             }
         }
     }
+
     @Listener(order = Order.POST)
     public void postGameStart(GameStartedServerEvent event){
-        checkVersion();
-        if(forceStop) {
-            //logger.error("Since a blacklisted mod is loaded, HuskyCrates will not start. Please check higher in your logs for the reasoning.");
-            return;
-        }
-
         Sponge.getScheduler().createTaskBuilder().execute(new Consumer<Task>() {
             @Override
             public void accept(Task task) {
@@ -348,7 +237,7 @@ public class HuskyCrates {
                     }
                 }).interval(15, TimeUnit.MINUTES).delay(15, TimeUnit.MINUTES).async().submit(HuskyCrates.instance);
             }
-        }).delayTicks(1).submit(this);
+        }).delayTicks(20).submit(this);
     }
 
     @Listener
@@ -372,12 +261,6 @@ public class HuskyCrates {
             e.printStackTrace();
         }
         langData = null;
-        if(forceStop) {
-            if(cs != null){
-                cs.sendMessage(Text.of(TextColors.GOLD,"HuskyCrates",TextColors.WHITE,":",TextColors.RED," HuskyCrates is currently force stopped. Check the console for more information."));
-            }
-            return;
-        }
         if(cs != null){
             cs.sendMessage(Text.of(TextColors.GOLD,"HuskyCrates",TextColors.WHITE,":",TextColors.YELLOW," Please check console to verify that any config modifications you've done are valid."));
         }
@@ -406,37 +289,22 @@ public class HuskyCrates {
             e.printStackTrace();
         }
         crateUtilities.startParticleEffects();
-        checkVersion();
-        for(Player plr: Sponge.getServer().getOnlinePlayers()){
-            notifyOutOfDate(plr);
-        }
     }
     @Listener
     public void gameReloaded(GameReloadEvent event){
         reload((event.getCause().root() instanceof Player)?((CommandSource)event.getCause().root()):null);
     }
-    private boolean blockCanBeCrate(BlockType type){
-        return type==BlockTypes.CHEST ||
-                type==BlockTypes.TRAPPED_CHEST ||
-                type==BlockTypes.ENDER_CHEST;
-    }
 
     @Listener(order=Order.PRE)
     public void placeBlock(ChangeBlockEvent event){
-        if(forceStop) {
-            return;
-        }
         if(event.getCause().root() instanceof Player) {
             Player plr = (Player) event.getCause().root();
 
             if (event instanceof ChangeBlockEvent.Place || event instanceof ChangeBlockEvent.Break) {
                 BlockType t = event.getTransactions().get(0).getOriginal().getLocation().get().getBlock().getType();
                 Location<World> location = event.getTransactions().get(0).getOriginal().getLocation().get();
-                //location.getBlock().with()
-                //System.out.println(event instanceof ChangeBlockEvent.Break);
+
                 if (validCrateBlocks.contains(t)) {
-                    //System.out.println("valid block");
-                    //crateUtilities.recognizeChest(event.getTransactions().get(0).getOriginal().getLocation().get());
 
                     if(event instanceof ChangeBlockEvent.Place) {
                         if (plr.getItemInHand(HandTypes.MAIN_HAND).isPresent()) {
@@ -480,21 +348,7 @@ public class HuskyCrates {
             }
         }
     }
-    private boolean updating = false;
-    public void updatePhysicalCrates() {
-        if(updating)
-            return;
-        updating = true;
-        removeArmorstands();
-        try {
-            DBReader.dbInitCheck();
-            DBReader.saveHuskyData();
-            DBReader.loadHuskyData();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        updating = false;
-    }
+
     public void keyHandler(Player plr, int keyResult, VirtualCrate vc, Location<World> blk,String crateType){
         if(keyResult == 1  || keyResult == 2) {
             if(!vc.freeCrate && keyResult == 1) {
@@ -578,21 +432,12 @@ public class HuskyCrates {
     }
     @Listener
     public void crateInteract(InteractBlockEvent.Secondary.MainHand event){
-        if(forceStop) {
-            return;
-        }
-        //System.out.println(crateUtilities.physicalCrates.keySet());
-        //Player pp = (Player) event.getCause().root();
 
-        //ItemStack ss = pp.getItemInHand(HandTypes.MAIN_HAND).get();
-        //System.out.println(ss.toContainer().get(DataQuery.of("UnsafeData")).get());
-
-        //pp.getInventory().offer(ItemStack.builder().fromContainer(ss.toContainer().set(DataQuery.of("UnsafeDamage"),3)).build());*/
         if(!event.getTargetBlock().getLocation().isPresent())
             return;
 
         Location<World> blk = event.getTargetBlock().getLocation().get();
-        //System.out.println(blk.getBlock().getType());
+
         if(validCrateBlocks.contains(blk.getBlockType())) {
             Player plr = (Player)event.getCause().root();
 
@@ -607,8 +452,6 @@ public class HuskyCrates {
                 }
                 keyHandler(plr,crateUtilities.isAcceptedKey(crateUtilities.physicalCrates.get(blk),plr.getItemInHand(HandTypes.MAIN_HAND),plr),vc,blk,crateType);
             }
-
-
         }
     }
 
@@ -618,7 +461,7 @@ public class HuskyCrates {
         if(!(event.getCause().root() instanceof Player)) return;
         Player plr = (Player) event.getCause().root();
         if(!event.getTargetBlock().getLocation().isPresent()) return;
-        Location location = event.getTargetBlock().getLocation().get();
+        Location<?> location = event.getTargetBlock().getLocation().get();
         if(crateUtilities.physicalCrates.containsKey(location)){
             if(!plr.hasPermission("huskycrates.tester") || plr.hasPermission("huskycrates.tester") && plr.getGameModeData().get(Keys.GAME_MODE).get() != GameModes.CREATIVE) {
                 event.setCancelled(true);
@@ -646,29 +489,19 @@ public class HuskyCrates {
     }
     @Listener
     public void entityMove(MoveEntityEvent event){
-        if(forceStop) {
-            return;
-        }
         if(crateUtilities.physicalCrates.containsKey(event.getFromTransform().getLocation())){
             event.setCancelled(true);
         }
     }
     @Listener
     public void entityInteract(InteractEntityEvent.Secondary.MainHand event){
-        if(forceStop) {
-            return;
-        }
-        //event.getTargetEntity().(event.getTargetEntity().toContainer().set(DataQuery.of("UnsafeData","crateID"),"blap"));
-        //event.getTargetEntity().()
-        //System.out.println(event.getTargetEntity().toContainer().get(DataQuery.of("UnsafeData","crateID")));
         if(event.getCause().root() instanceof Player) {
             Player plr = (Player) event.getCause().root();
             if(plr.getItemInHand(HandTypes.MAIN_HAND).isPresent() && plr.hasPermission("huskycrates.wand")) {
                 ItemStack hand = plr.getItemInHand(HandTypes.MAIN_HAND).get();
-                if(hand.getItem() == ItemTypes.BLAZE_ROD) {
+                if(hand.getType() == ItemTypes.BLAZE_ROD) {
                     if(hand.toContainer().get(DataQuery.of("UnsafeData","crateID")).isPresent()) {
                         if(!crateUtilities.physicalCrates.containsKey(event.getTargetEntity().getLocation())){
-                            //System.out.println(event.getTargetEntity().getLocation().getBlockPosition());
                             event.getTargetEntity().offer(Keys.AI_ENABLED,false);
                             event.getTargetEntity().offer(Keys.IS_SILENT,true);
                             crateUtilities.physicalCrates.put(event.getTargetEntity().getLocation(), new PhysicalCrate(event.getTargetEntity().getLocation(), hand.toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString(), this,true));
@@ -701,41 +534,15 @@ public class HuskyCrates {
                 String crateType = crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()).vc.id;
                 VirtualCrate vc = crateUtilities.getVirtualCrate(crateType);
                 crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()).createHologram();
-                //crateUtilities.recognizeChest(te.getLocation());
                 event.setCancelled(true);
                 int keyResult = crateUtilities.isAcceptedKey(crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()),plr.getItemInHand(HandTypes.MAIN_HAND),plr);
                 keyHandler(plr,keyResult,vc,event.getTargetEntity().getLocation(),crateType);
 
             }
         }
-
-    }
-
-    public HuskyAPI getHuskyAPI(){
-        return this.huskyAPI;
     }
 
     public CrateUtilities getCrateUtilities() {
         return crateUtilities;
-    }
-
-    public String getHuskyCrateIdentifier() {
-        return huskyCrateIdentifier;
-    }
-
-    public void notifyOutOfDate(Player plr){
-        if(plr.hasPermission("huskycrates.adminlog") && oodd.isOutOfDate()){
-            plr.sendMessage(Text.of(TextColors.RED,"------------------------------------------"));
-            plr.sendMessage(Text.of(TextColors.RED,"HuskyCrates is out of date!"));
-            plr.sendMessage(Text.of(TextColors.WHITE,"Latest: " + oodd.latestVersion()));
-            plr.sendMessage(Text.of(TextColors.WHITE,"Running: v" + pC.getVersion().get()));
-            plr.sendMessage(Text.of(TextColors.RED,"Please update your HuskyCrates soon."));
-            plr.sendMessage(Text.of(TextColors.RED,"------------------------------------------"));
-        }
-    }
-
-    @Listener
-    public void playerJoin(ClientConnectionEvent.Join event){
-        notifyOutOfDate(event.getTargetEntity());
     }
 }

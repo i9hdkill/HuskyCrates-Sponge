@@ -27,7 +27,6 @@ public class Wand implements CommandExecutor {
             }
 
 
-
             ItemStack keyItemStack = virtualCrate.getCrateWand();
             InventoryTransactionResult.Type mainInventory = player.getInventory().offer(keyItemStack.copy()).getType();
             if (!mainInventory.equals(InventoryTransactionResult.Type.SUCCESS)) {

@@ -61,7 +61,6 @@ public class InstantGUIView extends CrateView {
     private void updateInv(int state){
         int slotNum = 0;
         for(Inventory e : disp.slots()){
-            double speed = 3;
             double confettiSpeed = 2;
             if(slotNum != 4) {
                 if (tickCount == 0 || Math.round(tickCount / confettiSpeed) > Math.round((tickCount - 1) / confettiSpeed)) {
@@ -79,7 +78,6 @@ public class InstantGUIView extends CrateView {
                     plugin.logger.error("Random Item Selection failed in Roulette Crate View: " + vc.displayName);
                 }
 
-                //e.set(((CrateRewardHolder)items.get(Math.round(tickCount/2) % items.size())[1]).getDisplayItem());
             }else{
                 e.set(e.peek().get());
             }

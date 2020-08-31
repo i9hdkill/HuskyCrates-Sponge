@@ -27,7 +27,7 @@ import java.util.Random;
 /**
  * Created by lokio on 12/28/2016.
  */
-@SuppressWarnings("deprecation")
+
 public class SpinnerCrateView extends CrateView {
     private Inventory disp;
     private Task updater;
@@ -97,7 +97,7 @@ public class SpinnerCrateView extends CrateView {
 
                 e.set(selector);
             }else if(slotnum > 9 && slotnum < 17 && state != 2){
-                //int itemNum = items.size() - 1 - Math.abs(((slotnum - 10) + (clicks)) % items.size());
+
 
                 int itemNum = Math.abs(clicks + (slotnum - 9) - 4 ) % items.size();
                 e.set(((CrateReward)items.get(itemNum)[1]).getDisplayItem());
@@ -113,9 +113,7 @@ public class SpinnerCrateView extends CrateView {
                 }
             }else if(state == 2){
                 int itemNum = Math.abs(clicks + (slotnum - 9) - 4) % items.size();
-                /*HuskyCrates.instance.logger.warn("result: " + (itemNum + 1));
-                HuskyCrates.instance.logger.warn("fail: " + (planned != itemNum));
-                HuskyCrates.instance.logger.warn("difference: " + (planned - itemNum));*/
+
                 giveToPlayer = (CrateReward)items.get(itemNum)[1];
                 e.set(giveToPlayer.getDisplayItem());
             }

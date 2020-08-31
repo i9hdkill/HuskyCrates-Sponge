@@ -3,14 +3,12 @@ package com.codehusky.huskycrates.crate;
 import com.codehusky.huskycrates.crate.db.DBReader;
 import com.flowpowered.math.vector.Vector3d;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.effect.particle.ParticleEffect;
 import org.spongepowered.api.effect.particle.ParticleOptions;
 import org.spongepowered.api.effect.particle.ParticleTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
-import org.spongepowered.api.entity.living.ArmorStand;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Color;
@@ -21,7 +19,6 @@ import com.codehusky.huskycrates.HuskyCrates;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Random;
 import java.util.UUID;
 
@@ -33,12 +30,10 @@ public class PhysicalCrate {
     public Location<World> location;
     private String crateId;
     public VirtualCrate vc;
-    //public ArmorStand as = null;
     public Entity ent = null;
     private HuskyCrates huskyCrates;
     public boolean isEntity = false;
     double randomTimeOffset = new Random().nextDouble()*2000;
-    public static Vector3d offset = new Vector3d(0.5,1,0.5);
     public void handleUse(Player player){
         if(vc.lastUsed.containsKey(player.getUniqueId())){
             vc.lastUsed.remove(player.getUniqueId());
@@ -59,6 +54,7 @@ public class PhysicalCrate {
         if(crateLocation != null)
             createHologram();
     }
+
     public void createHologram() {
         if(location.getExtent().getChunk(location.getChunkPosition()).isPresent()) {
             if (location.getExtent().getChunk(location.getChunkPosition()).get().isLoaded()) {
@@ -71,13 +67,13 @@ public class PhysicalCrate {
                             ent.offer(Keys.CUSTOM_NAME_VISIBLE, true);
                             String name = "&cERROR, CHECK CONSOLE!";
                             try {
-                                name = /*crateId*/ huskyCrates.crateUtilities.getVirtualCrate(crateId).displayName;
+                                name = huskyCrates.crateUtilities.getVirtualCrate(crateId).displayName;
                             } catch (Exception e) {
                                 //e.printStackTrace();
                             }
                             ent.offer(Keys.DISPLAY_NAME, TextSerializers.FORMATTING_CODE.deserialize(name));
                         }
-                    }else {
+                    } else {
 
                         ent = location.getExtent().createEntity(EntityTypes.ARMOR_STAND, location.getPosition().add(0.5, 1, 0.5));
                         ent.setCreator(UUID.fromString(huskyCrates.armorStandIdentifier));
@@ -87,7 +83,7 @@ public class PhysicalCrate {
                         ent.offer(Keys.CUSTOM_NAME_VISIBLE, true);
                         String name = "&cERROR, CHECK CONSOLE!";
                         try {
-                            name = /*crateId*/ huskyCrates.crateUtilities.getVirtualCrate(crateId).displayName;
+                            name = huskyCrates.crateUtilities.getVirtualCrate(crateId).displayName;
                         } catch (Exception e) {
                             //e.printStackTrace();
                         }
@@ -102,6 +98,7 @@ public class PhysicalCrate {
             }
         }
     }
+
     void runParticles() {
         try {
             createHologram();

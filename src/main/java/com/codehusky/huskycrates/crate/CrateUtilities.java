@@ -9,7 +9,6 @@ import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.scheduler.Scheduler;
 import org.spongepowered.api.scheduler.Task;
@@ -25,7 +24,7 @@ import java.util.*;
 /**
  * Created by lokio on 12/28/2016.
  */
-@SuppressWarnings("deprecation")
+
 public class CrateUtilities {
     public HashMap<String,VirtualCrate> crateTypes = new HashMap<>();
     public HashMap<Location<World>,PhysicalCrate> physicalCrates = new HashMap<>();
@@ -89,18 +88,7 @@ public class CrateUtilities {
         Task.Builder taskBuilder = scheduler.createTaskBuilder();
         runner = taskBuilder.execute(this::particleRunner).intervalTicks(1).submit(plugin);
     }
-    /*public void recognizeChest(Location<World> location){
-        if(physicalCrates.containsKey(location)) return;
-        String id = null;
-        try {
-            id = getTypeFromLocation(location);
-        } catch (Exception e) {}
-        if(id != null){
-            physicalCrates.put(location,new PhysicalCrate(location,id,plugin));
-            HuskyCrates.instance.updatePhysicalCrates();
-        }
 
-    }*/
     public ArrayList<Location<World>> brokenCrates = new ArrayList<>();
     private void particleRunner(){
         if(brokenCrates.size() > 0)
@@ -195,7 +183,7 @@ public class CrateUtilities {
             }
         }
         if (key.isPresent()) {
-            if (key.get().getItem() == crate.vc.getKeyType()) {
+            if (key.get().getType() == crate.vc.getKeyType()) {
                 if (key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
                     if(key.get().toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).isPresent()) {
                         String id = key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString();

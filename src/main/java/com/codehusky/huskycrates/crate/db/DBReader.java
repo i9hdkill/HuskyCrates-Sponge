@@ -1,25 +1,24 @@
 package com.codehusky.huskycrates.crate.db;
 
 import com.codehusky.huskycrates.HuskyCrates;
-import com.codehusky.huskycrates.commands.Husky;
 import com.codehusky.huskycrates.crate.PhysicalCrate;
 import com.codehusky.huskycrates.crate.VirtualCrate;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.service.sql.SqlService;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import javax.sql.DataSource;
 import java.io.File;
-import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,10 +70,8 @@ public class DBReader {
         connectDB();
         HashMap<Integer,World> worldIDtoWorld = new HashMap<>();
         ResultSet worldInfo = dbConnection.prepareStatement("SELECT * FROM WORLDINFO").executeQuery();
-        //HuskyCrates.instance.logger.info("wasNull: " + worldInfo.wasNull());
-        //HuskyCrates.instance.logger.info("isClosed: " + worldInfo.isClosed());
+
         while(worldInfo.next()){
-            //HuskyCrates.instance.logger.info("worldInfo thing!");
             String worldUUID = worldInfo.getString("uuid");
             String worldName = worldInfo.getString("name");
             int id = worldInfo.getInt("ID");
@@ -96,10 +93,8 @@ public class DBReader {
         }
         ResultSet cratePositions = dbConnection.prepareStatement("SELECT * FROM CRATELOCATIONS").executeQuery();
         HuskyCrates.instance.crateUtilities.physicalCrates = new HashMap<>();
-        //HuskyCrates.instance.logger.info("wasNull: " + cratePositions.wasNull());
-        //HuskyCrates.instance.logger.info("isClosed: " + cratePositions.isClosed());
+
         while(cratePositions.next()){
-            //HuskyCrates.instance.logger.info("cratePositions thing!");
             int id = cratePositions.getInt("ID");
             double x = cratePositions.getDouble("X");
             double y = cratePositions.getDouble("Y");
