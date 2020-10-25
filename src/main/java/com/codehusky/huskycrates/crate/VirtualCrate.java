@@ -83,7 +83,7 @@ public class VirtualCrate {
             }
         }
         if(!node.getNode("lang").isVirtual()){
-            langData = new LangData(node.getNode("lang"));
+            langData = new LangData(HuskyCrates.instance.langData,node.getNode("lang"));
         }else{
             langData = HuskyCrates.instance.langData;
         }
@@ -389,18 +389,18 @@ public class VirtualCrate {
         }
         return 0;
     }
-    public void takeVirtualKey(User player,int count){
+    public void takeVirtualKeys(User player,int count){
         if(virtualBalances.containsKey(player.getUniqueId().toString())) {
             virtualBalances.put(player.getUniqueId().toString(),virtualBalances.get(player.getUniqueId().toString())-count);
         }
     }
     public void takeVirtualKey(User player){
-        takeVirtualKey(player,1);
+        takeVirtualKeys(player,1);
     }
     public void giveVirtualKeys(User player, int count){
         if(virtualBalances.containsKey(player.getUniqueId().toString())) {
             virtualBalances.put(player.getUniqueId().toString(),virtualBalances.get(player.getUniqueId().toString())+count);
-        }else{
+        } else{
             virtualBalances.put(player.getUniqueId().toString(),count);
         }
         try {
@@ -423,5 +423,8 @@ public class VirtualCrate {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    public void setVirtualKeys(User player, int count) {
+        virtualBalances.put(player.getUniqueId().toString(),count);
     }
 }
