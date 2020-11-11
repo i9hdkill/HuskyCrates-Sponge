@@ -17,8 +17,9 @@ import com.codehusky.huskycrates.HuskyCrates;
 
 public class KeyAll implements CommandExecutor {
 
-    @Override public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
-        if(commandContext.getOne("type").isPresent()) {
+    @Override
+    public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
+        if (commandContext.getOne("type").isPresent()) {
             String type = commandContext.<String>getOne("type").get();
             VirtualCrate virtualCrate = HuskyCrates.instance.getCrateUtilities().getVirtualCrate(type);
             int quantity = commandContext.getOne("quantity").isPresent() ? commandContext.<Integer>getOne("quantity").get() : 1;
@@ -28,7 +29,7 @@ public class KeyAll implements CommandExecutor {
             }
 
 
-            for(Player player : Sponge.getServer().getOnlinePlayers()) {
+            for (Player player : Sponge.getServer().getOnlinePlayers()) {
                 ItemStack keyItemStack = virtualCrate.getCrateKey(quantity);
                 InventoryTransactionResult.Type mainInventory = player.getInventory().offer(keyItemStack.copy()).getType();
                 if (!mainInventory.equals(InventoryTransactionResult.Type.SUCCESS)) {
@@ -41,7 +42,7 @@ public class KeyAll implements CommandExecutor {
                     }
                 }
             }
-        }else{
+        } else {
             commandSource.sendMessage(Text.of("Usage: /crate keyall <id> [count]"));
         }
         return CommandResult.success();

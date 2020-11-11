@@ -23,9 +23,9 @@ import java.util.LinkedHashMap;
 import java.util.Optional;
 
 public class CrateConfigParser {
-    public static CrateReward fromConfig(ConfigurationNode holderNode, VirtualCrate vc){
-        if(holderNode.getNode("huskydata").isVirtual()){
-            HuskyCrates.instance.logger.error("CANNOT FIND HUSKYDATA: " + holderNode.getNode("name").getString("(no name)") + " (item #" + holderNode.getKey()+  ") || " + holderNode.getParent().getParent().getKey());
+    public static CrateReward fromConfig(ConfigurationNode holderNode, VirtualCrate vc) {
+        if (holderNode.getNode("huskydata").isVirtual()) {
+            HuskyCrates.instance.logger.error("CANNOT FIND HUSKYDATA: " + holderNode.getNode("name").getString("(no name)") + " (item #" + holderNode.getKey() + ") || " + holderNode.getParent().getParent().getKey());
             return null;
         }
 
@@ -34,8 +34,8 @@ public class CrateConfigParser {
         boolean single = false;
         boolean announce = false;
         LangData langData = vc.getLangData();
-        if(!holderNode.getNode("huskydata","lang").isVirtual()){
-            langData = new LangData(vc.getLangData(),holderNode.getNode("huskydata","lang"));
+        if (!holderNode.getNode("huskydata", "lang").isVirtual()) {
+            langData = new LangData(vc.getLangData(), holderNode.getNode("huskydata", "lang"));
         }
         //System.out.println(dispItem.get(Keys.DISPLAY_NAME));
         if (!holderNode.getNode("huskydata", "reward", "announce").isVirtual()) {
@@ -48,21 +48,21 @@ public class CrateConfigParser {
             holderNode.getNode("huskydata", "treatAsSingle").setValue(holderNode.getNode("huskydata", "reward", "treatAsSingle").getValue());
             holderNode.getNode("huskydata", "reward", "treatAsSingle").setValue(null);
         }
-        if(!holderNode.getNode("huskydata","reward","overrideRewardName").isVirtual()) {
-            String premove = holderNode.getNode("huskydata","reward","overrideRewardName").getString("failure?");
-            holderNode.getNode("huskydata","reward","overrideRewardName").setValue(null);
-            holderNode.getNode("huskydata","overrideRewardName").setValue(premove);
+        if (!holderNode.getNode("huskydata", "reward", "overrideRewardName").isVirtual()) {
+            String premove = holderNode.getNode("huskydata", "reward", "overrideRewardName").getString("failure?");
+            holderNode.getNode("huskydata", "reward", "overrideRewardName").setValue(null);
+            holderNode.getNode("huskydata", "overrideRewardName").setValue(premove);
         }
-        if(holderNode.getNode("huskydata","overrideRewardName").isVirtual()){
+        if (holderNode.getNode("huskydata", "overrideRewardName").isVirtual()) {
             //System.out.println("Virtual");
             if (dispItem.get(Keys.DISPLAY_NAME).isPresent()) {
                 name = TextSerializers.FORMATTING_CODE.serialize(dispItem.get(Keys.DISPLAY_NAME).get());
             } else {
                 name = dispItem.getItem().getName();
             }
-        }else{
+        } else {
             //System.out.println("Real");
-            name = holderNode.getNode("huskydata","overrideRewardName").getString("strings, please.");
+            name = holderNode.getNode("huskydata", "overrideRewardName").getString("strings, please.");
         }
         if (!holderNode.getNode("huskydata", "announce").isVirtual()) {
             announce = holderNode.getNode("huskydata", "announce").getBoolean(false);
@@ -70,15 +70,15 @@ public class CrateConfigParser {
         if (!holderNode.getNode("huskydata", "treatAsSingle").isVirtual()) {
             single = holderNode.getNode("huskydata", "treatAsSingle").getBoolean(false);
         }
-        if(!holderNode.getNode("huskydata","reward").isVirtual()){
-            holderNode.getNode("huskydata","rewards").getAppendedNode().setValue(holderNode.getNode("huskydata","reward"));
-            holderNode.getNode("huskydata","reward").setValue(null);
+        if (!holderNode.getNode("huskydata", "reward").isVirtual()) {
+            holderNode.getNode("huskydata", "rewards").getAppendedNode().setValue(holderNode.getNode("huskydata", "reward"));
+            holderNode.getNode("huskydata", "reward").setValue(null);
         }
 
         ArrayList<Object> rewards = new ArrayList<>();
-        for(ConfigurationNode rewardNode : holderNode.getNode("huskydata","rewards").getChildrenList()) {
-            if(rewardNode.getNode("type").isVirtual()){
-                HuskyCrates.instance.logger.error("CANNOT FIND REWARD TYPE: " + holderNode.getNode("name").getString("(no name)") + " (item #" + holderNode.getKey()+  ") (reward #" + rewardNode.getKey()+  ") || " + holderNode.getParent().getParent().getKey());
+        for (ConfigurationNode rewardNode : holderNode.getNode("huskydata", "rewards").getChildrenList()) {
+            if (rewardNode.getNode("type").isVirtual()) {
+                HuskyCrates.instance.logger.error("CANNOT FIND REWARD TYPE: " + holderNode.getNode("name").getString("(no name)") + " (item #" + holderNode.getKey() + ") (reward #" + rewardNode.getKey() + ") || " + holderNode.getParent().getParent().getKey());
                 continue;
             }
             if (rewardNode.getNode("type").getString().equalsIgnoreCase("item")) {
@@ -101,27 +101,28 @@ public class CrateConfigParser {
             }
 
         }
-        if (!holderNode.getNode("huskydata","announce").isVirtual()) {
-            announce = holderNode.getNode("huskydata","announce").getBoolean(false);
+        if (!holderNode.getNode("huskydata", "announce").isVirtual()) {
+            announce = holderNode.getNode("huskydata", "announce").getBoolean(false);
         }
-        if(rewards.size() == 0){
+        if (rewards.size() == 0) {
             rewards.add("/say No rewards were loaded in the " + vc.id + " crate!");
         }
-        return new CrateReward(dispItem,rewards,name,holderNode.getNode("huskydata","weight").getDouble(1),langData,announce,single);
+        return new CrateReward(dispItem, rewards, name, holderNode.getNode("huskydata", "weight").getDouble(1), langData, announce, single);
     }
-    private static ItemStack itemFromNode(ConfigurationNode itemRoot){
+
+    private static ItemStack itemFromNode(ConfigurationNode itemRoot) {
         try {
 
-            if(itemRoot.getNode("id").isVirtual() ){
-                HuskyCrates.instance.logger.error("NO ITEM ID: " + itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey()+  ") || " + itemRoot.getParent().getParent().getKey());
-                return ItemStack.of(ItemTypes.NONE,1);
+            if (itemRoot.getNode("id").isVirtual()) {
+                HuskyCrates.instance.logger.error("NO ITEM ID: " + itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey() + ") || " + itemRoot.getParent().getParent().getKey());
+                return ItemStack.of(ItemTypes.NONE, 1);
             }
             ItemType type;
             try {
                 type = itemRoot.getNode("id").getValue(TypeToken.of(ItemType.class));
-            }catch(Exception e){
-                HuskyCrates.instance.logger.error("INVALID ITEM ID: \"" + itemRoot.getNode("id").getString("NOT A STRING") + "\" || "+ itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey()+  ") || " + itemRoot.getParent().getParent().getKey());
-                return ItemStack.of(ItemTypes.NONE,1);
+            } catch (Exception e) {
+                HuskyCrates.instance.logger.error("INVALID ITEM ID: \"" + itemRoot.getNode("id").getString("NOT A STRING") + "\" || " + itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey() + ") || " + itemRoot.getParent().getParent().getKey());
+                return ItemStack.of(ItemTypes.NONE, 1);
             }
             ItemStack item = ItemStack.builder()
                     .itemType(type)
@@ -129,57 +130,57 @@ public class CrateConfigParser {
                     //.add())
                     .build();
 
-            if(!itemRoot.getNode("name").isVirtual()){
+            if (!itemRoot.getNode("name").isVirtual()) {
                 item.offer(Keys.DISPLAY_NAME, TextSerializers.FORMATTING_CODE.deserialize(itemRoot.getNode("name").getString()));
             }
-            if(!itemRoot.getNode("variant").isVirtual()) {
+            if (!itemRoot.getNode("variant").isVirtual()) {
                 //if(Sponge.getRegistry().getType(TreeType.class,itemRoot.getNode("variant").getString()).isPresent()) {
                 //System.out.println(item.offer(Keys.TREE_TYPE,getTreeType(itemRoot.getNode("variant").getString("oak"))));
                 //System.out.println(itemRoot.getNode("variant").getValue());
                 //}
             }
-            if(!itemRoot.getNode("lore").isVirtual()) {
+            if (!itemRoot.getNode("lore").isVirtual()) {
                 ArrayList<Text> lore = new ArrayList<>();
                 for (String ll : itemRoot.getNode("lore").getList(TypeToken.of(String.class))) {
                     lore.add(TextSerializers.FORMATTING_CODE.deserialize(ll));
                 }
                 item.offer(Keys.ITEM_LORE, lore);
             }
-            if(!itemRoot.getNode("name").isVirtual()) {
+            if (!itemRoot.getNode("name").isVirtual()) {
                 item.offer(Keys.DISPLAY_NAME, TextSerializers.FORMATTING_CODE.deserialize(itemRoot.getNode("name").getString()));
             }
-            if(!itemRoot.getNode("enchants").isVirtual()) {
+            if (!itemRoot.getNode("enchants").isVirtual()) {
                 ArrayList<Enchantment> enchantments = new ArrayList<>();
                 for (Object key : itemRoot.getNode("enchants").getChildrenMap().keySet()) {
                     int level = itemRoot.getNode("enchants").getChildrenMap().get(key).getInt();
                     String enchantID = (String) key;
                     Optional<EnchantmentType> pEnchantType = Sponge.getRegistry().getType(EnchantmentType.class, enchantID);
-                    if(!pEnchantType.isPresent()){
-                        HuskyCrates.instance.logger.error("INVALID ENCHANT ID: \"" + key + "\" || "+ itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey()+  ") || " + itemRoot.getParent().getParent().getKey());
-                        return ItemStack.of(ItemTypes.NONE,1);
+                    if (!pEnchantType.isPresent()) {
+                        HuskyCrates.instance.logger.error("INVALID ENCHANT ID: \"" + key + "\" || " + itemRoot.getNode("name").getString("(no name)") + " (item #" + itemRoot.getKey() + ") || " + itemRoot.getParent().getParent().getKey());
+                        return ItemStack.of(ItemTypes.NONE, 1);
                     }
-                    Enchantment pEnchant = Enchantment.of(pEnchantType.get(), level);                                        
+                    Enchantment pEnchant = Enchantment.of(pEnchantType.get(), level);
                     enchantments.add(pEnchant);
                 }
                 item.offer(Keys.ITEM_ENCHANTMENTS, enchantments);
             }
-            if(!itemRoot.getNode("damage").isVirtual()){
+            if (!itemRoot.getNode("damage").isVirtual()) {
                 //HuskyCrates.instance.logger.info("damage override called");
                 item = ItemStack.builder()
-                        .fromContainer(item.toContainer().set(DataQuery.of("UnsafeDamage"),itemRoot.getNode("damage").getInt(0))) //OVERRIDE DAMAGE VAL! :)
+                        .fromContainer(item.toContainer().set(DataQuery.of("UnsafeDamage"), itemRoot.getNode("damage").getInt(0))) //OVERRIDE DAMAGE VAL! :)
                         .build();
             }
 
-            if(!itemRoot.getNode("nbt").isVirtual()){
+            if (!itemRoot.getNode("nbt").isVirtual()) {
                 //nbt overrrides
                 LinkedHashMap items = (LinkedHashMap) itemRoot.getNode("nbt").getValue();
-                if(item.toContainer().get(DataQuery.of("UnsafeData")).isPresent()) {
+                if (item.toContainer().get(DataQuery.of("UnsafeData")).isPresent()) {
                     BiMap real = ((BiMap) item.toContainer().getMap(DataQuery.of("UnsafeData")).get());
                     items.putAll(real);
                 }
                 //System.out.println(item.toContainer().get(DataQuery.of("UnsafeData")).get().getClass());
                 item = ItemStack.builder()
-                        .fromContainer(item.toContainer().set(DataQuery.of("UnsafeData"),items))
+                        .fromContainer(item.toContainer().set(DataQuery.of("UnsafeData"), items))
                         .build();
             }
 

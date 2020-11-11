@@ -6,6 +6,7 @@ import org.spongepowered.api.command.args.CommandArgs;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.text.Text;
+
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * Created By Rob5Underscores.
- *
+ * <p>
  * This CommandElement is used to determine the desired operation to take place (on the key balance).
  */
 public class OperationElement extends CommandElement {

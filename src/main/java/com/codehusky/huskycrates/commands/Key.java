@@ -17,13 +17,14 @@ import java.util.Optional;
 
 /**
  * Created By KasperFranz.
- *
+ * <p>
  * This CommandExecutor is used to get the crate item.
  */
 public class Key implements CommandExecutor {
 
-    @Override public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
-        if(commandContext.getOne("type").isPresent()) {
+    @Override
+    public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
+        if (commandContext.getOne("type").isPresent()) {
             String type = commandContext.<String>getOne("type").get();
             Optional<Player> player = commandContext.getOne("player");
             VirtualCrate virtualCrate = HuskyCrates.instance.getCrateUtilities().getVirtualCrate(type);
@@ -52,7 +53,7 @@ public class Key implements CommandExecutor {
                     }
                 }
             }
-        }else{
+        } else {
             commandSource.sendMessage(Text.of("Usage: /crate key <id> [player] [count]"));
         }
         return CommandResult.success();

@@ -24,13 +24,14 @@ import java.util.UUID;
 public class DBReader {
     private static Connection dbConnection = null;
     private static DataSource dbSource = null;
+
     private static void connectDB() throws SQLException {
-        if(dbConnection != null) {
+        if (dbConnection != null) {
             if (!dbConnection.isClosed()) {
                 dbConnection.close();
             }
         }
-        if(dbSource == null) {
+        if (dbSource == null) {
             dbSource = Sponge.getServiceManager().provide(SqlService.class).get().getDataSource("jdbc:h2:" + HuskyCrates.instance.configDir.toString() + File.separator + "data");
         }
         dbConnection = dbSource.getConnection();
@@ -38,20 +39,20 @@ public class DBReader {
 
     public static void dbInitCheck() throws SQLException {
         connectDB();
-        boolean cP = dbConnection.getMetaData().getTables(null,null,"CRATELOCATIONS",null).next();
-        boolean cKU = dbConnection.getMetaData().getTables(null,null,"VALIDKEYS",null).next();
-        boolean kB = dbConnection.getMetaData().getTables(null,null,"KEYBALANCES",null).next();
-        boolean wI = dbConnection.getMetaData().getTables(null,null,"WORLDINFO",null).next();
-        if(!cP){
+        boolean cP = dbConnection.getMetaData().getTables(null, null, "CRATELOCATIONS", null).next();
+        boolean cKU = dbConnection.getMetaData().getTables(null, null, "VALIDKEYS", null).next();
+        boolean kB = dbConnection.getMetaData().getTables(null, null, "KEYBALANCES", null).next();
+        boolean wI = dbConnection.getMetaData().getTables(null, null, "WORLDINFO", null).next();
+        if (!cP) {
             dbConnection.prepareStatement("CREATE TABLE CRATELOCATIONS (ID INTEGER NOT NULL AUTO_INCREMENT, X DOUBLE, Y DOUBLE, Z DOUBLE, worldID INTEGER, isEntityCrate BOOLEAN, crateID CHARACTER,  PRIMARY KEY(ID))").executeUpdate();
         }
-        if(!cKU){
+        if (!cKU) {
             dbConnection.prepareStatement("CREATE TABLE VALIDKEYS (keyUUID CHARACTER, crateID CHARACTER, amount INTEGER )").executeUpdate();
         }
-        if(!kB){
+        if (!kB) {
             dbConnection.prepareStatement("CREATE TABLE KEYBALANCES (userUUID CHARACTER, crateID CHARACTER, amount INTEGER)").executeUpdate();
         }
-        if(!wI){
+        if (!wI) {
             dbConnection.prepareStatement("CREATE TABLE WORLDINFO (ID INTEGER NOT NULL AUTO_INCREMENT,uuid CHARACTER, name CHARACTER,  PRIMARY KEY(ID))").executeUpdate();
         }
 
@@ -60,24 +61,24 @@ public class DBReader {
 
     public static void loadHuskyData() throws SQLException {
         connectDB();
-        HashMap<Integer,World> worldIDtoWorld = new HashMap<>();
+        HashMap<Integer, World> worldIDtoWorld = new HashMap<>();
         ResultSet worldInfo = dbConnection.prepareStatement("SELECT * FROM WORLDINFO").executeQuery();
         //HuskyCrates.instance.logger.info("wasNull: " + worldInfo.wasNull());
         //HuskyCrates.instance.logger.info("isClosed: " + worldInfo.isClosed());
-        while(worldInfo.next()){
+        while (worldInfo.next()) {
             //HuskyCrates.instance.logger.info("worldInfo thing!");
             String worldUUID = worldInfo.getString("uuid");
             String worldName = worldInfo.getString("name");
             int id = worldInfo.getInt("ID");
             Optional<World> preWorld = Sponge.getServer().getWorld(UUID.fromString(worldUUID));
-            if(!preWorld.isPresent()){
+            if (!preWorld.isPresent()) {
                 HuskyCrates.instance.logger.warn("Invalid World UUID (BUG SPONGE DEVS)");
                 preWorld = Sponge.getServer().getWorld(worldName);
             }
-            if(preWorld.isPresent()) {
-                worldIDtoWorld.put(id,preWorld.get());
+            if (preWorld.isPresent()) {
+                worldIDtoWorld.put(id, preWorld.get());
                 HuskyCrates.instance.logger.info("Loaded " + worldName + " successfully.");
-            }else{
+            } else {
                 HuskyCrates.instance.logger.warn("WorldInfo #" + id + " provides invalid world info. Removing from table.");
                 Statement removal = dbConnection.createStatement();
                 removal.executeQuery("SELECT  * FROM WORLDINFO WHERE ID=" + id);
@@ -89,7 +90,7 @@ public class DBReader {
         HuskyCrates.instance.crateUtilities.physicalCrates = new HashMap<>();
         //HuskyCrates.instance.logger.info("wasNull: " + cratePositions.wasNull());
         //HuskyCrates.instance.logger.info("isClosed: " + cratePositions.isClosed());
-        while(cratePositions.next()){
+        while (cratePositions.next()) {
             //HuskyCrates.instance.logger.info("cratePositions thing!");
             int id = cratePositions.getInt("ID");
             double x = cratePositions.getDouble("X");
@@ -98,12 +99,12 @@ public class DBReader {
             int worldID = cratePositions.getInt("worldID");
             boolean entityCrate = cratePositions.getBoolean("isEntityCrate");
             String crateID = cratePositions.getString("crateID");
-            if(worldIDtoWorld.containsKey(worldID)){ //VALID WORLD
+            if (worldIDtoWorld.containsKey(worldID)) { //VALID WORLD
                 World world = worldIDtoWorld.get(worldID);
-                Location<World> loco = new Location<>(world,x,y,z);
-                HuskyCrates.instance.crateUtilities.physicalCrates.put(loco,new PhysicalCrate(loco,crateID,HuskyCrates.instance,entityCrate));
+                Location<World> loco = new Location<>(world, x, y, z);
+                HuskyCrates.instance.crateUtilities.physicalCrates.put(loco, new PhysicalCrate(loco, crateID, HuskyCrates.instance, entityCrate));
                 HuskyCrates.instance.logger.info("Loaded " + crateID + " @ " + x + "," + y + "," + z);
-            }else{
+            } else {
                 HuskyCrates.instance.logger.warn("CrateLocation #" + id + " provides an invalid world ID. Removing from table.");
                 Statement removal = dbConnection.createStatement();
                 removal.executeQuery("SELECT  * FROM CRATELOCATIONS WHERE ID=" + id);
@@ -114,19 +115,19 @@ public class DBReader {
         ResultSet crateKeyUUIDs = dbConnection.prepareStatement("SELECT * FROM VALIDKEYS").executeQuery();
         //HuskyCrates.instance.logger.info("wasNull: " + crateKeyUUIDs.wasNull());
         //HuskyCrates.instance.logger.info("isClosed: " + crateKeyUUIDs.isClosed());
-        for(VirtualCrate vc : HuskyCrates.instance.crateUtilities.crateTypes.values()){
+        for (VirtualCrate vc : HuskyCrates.instance.crateUtilities.crateTypes.values()) {
             vc.pendingKeys = new HashMap<>();
             vc.virtualBalances = new HashMap<>();
         }
-        while(crateKeyUUIDs.next()){
+        while (crateKeyUUIDs.next()) {
             //HuskyCrates.instance.logger.info("crateKeyUUIDs thing!");
             UUID keyUUID = UUID.fromString(crateKeyUUIDs.getString("keyUUID"));
             String crateID = crateKeyUUIDs.getString("crateID");
             int amount = crateKeyUUIDs.getInt("amount");
-            if(HuskyCrates.instance.crateUtilities.crateTypes.containsKey(crateID)){
+            if (HuskyCrates.instance.crateUtilities.crateTypes.containsKey(crateID)) {
                 VirtualCrate vc = HuskyCrates.instance.crateUtilities.crateTypes.get(crateID);
-                vc.pendingKeys.put(keyUUID.toString(),amount);
-            }else{
+                vc.pendingKeys.put(keyUUID.toString(), amount);
+            } else {
                 HuskyCrates.instance.logger.warn("ValidKeys " + keyUUID + " provides an invalid crate ID. Removing from table.");
                 Statement removal = dbConnection.createStatement();
                 removal.executeQuery("SELECT  * FROM CRATELOCATIONS WHERE KEYUUID=" + keyUUID.toString());
@@ -137,14 +138,14 @@ public class DBReader {
         ResultSet keyBalances = dbConnection.prepareStatement("SELECT * FROM KEYBALANCES").executeQuery();
         //HuskyCrates.instance.logger.info("wasNull: " + keyBalances.wasNull());
         //HuskyCrates.instance.logger.info("isClosed: " + keyBalances.isClosed());
-        while(keyBalances.next()){
+        while (keyBalances.next()) {
             //HuskyCrates.instance.logger.info("keyBalances thing!");
             UUID userUUID = UUID.fromString(keyBalances.getString("userUUID"));
             String crateID = keyBalances.getString("crateID");
             int amount = keyBalances.getInt("amount");
-            if(HuskyCrates.instance.crateUtilities.getCrateTypes().contains(crateID)){
-                HuskyCrates.instance.crateUtilities.getVirtualCrate(crateID).virtualBalances.put(userUUID.toString(),amount);
-            }else{
+            if (HuskyCrates.instance.crateUtilities.getCrateTypes().contains(crateID)) {
+                HuskyCrates.instance.crateUtilities.getVirtualCrate(crateID).virtualBalances.put(userUUID.toString(), amount);
+            } else {
                 HuskyCrates.instance.logger.warn("KeyBalances for UUID " + userUUID + " provides an invalid crate ID. Removing from table.");
                 Statement removal = dbConnection.createStatement();
                 removal.executeQuery("SELECT  * FROM KEYBALANCES WHERE USERUUID=" + userUUID.toString());
@@ -178,15 +179,15 @@ public class DBReader {
         worldTableClear.execute("ALTER TABLE WORLDINFO ALTER COLUMN ID RESTART WITH 1");
         worldTableClear.close();
         int count = 1;
-        HashMap<UUID,Integer> worldsInserted = new HashMap<>();
-        for(Location<World> location : HuskyCrates.instance.crateUtilities.physicalCrates.keySet()){
-            if(!worldsInserted.keySet().contains(location.getExtent().getUniqueId())){
-                worldsInserted.put(location.getExtent().getUniqueId(),count);
+        HashMap<UUID, Integer> worldsInserted = new HashMap<>();
+        for (Location<World> location : HuskyCrates.instance.crateUtilities.physicalCrates.keySet()) {
+            if (!worldsInserted.keySet().contains(location.getExtent().getUniqueId())) {
+                worldsInserted.put(location.getExtent().getUniqueId(), count);
                 count++;
-                dbConnection.prepareStatement("INSERT INTO WORLDINFO(uuid,name) VALUES('" + location.getExtent().getUniqueId().toString() + "','"+ location.getExtent().getName() + "')").executeUpdate();
+                dbConnection.prepareStatement("INSERT INTO WORLDINFO(uuid,name) VALUES('" + location.getExtent().getUniqueId().toString() + "','" + location.getExtent().getName() + "')").executeUpdate();
             }
             PhysicalCrate crate = HuskyCrates.instance.crateUtilities.physicalCrates.get(location);
-            dbConnection.prepareStatement("INSERT INTO CRATELOCATIONS(X,Y,Z,worldID,isEntityCrate,crateID) VALUES(" + location.getX() + ","  + location.getY() + ","  + location.getZ() + ","  + worldsInserted.get(location.getExtent().getUniqueId()) + ","  + crate.isEntity + ",'"  + crate.vc.id + "')").executeUpdate();
+            dbConnection.prepareStatement("INSERT INTO CRATELOCATIONS(X,Y,Z,worldID,isEntityCrate,crateID) VALUES(" + location.getX() + "," + location.getY() + "," + location.getZ() + "," + worldsInserted.get(location.getExtent().getUniqueId()) + "," + crate.isEntity + ",'" + crate.vc.id + "')").executeUpdate();
         }
 
         //crate key uuids
@@ -197,11 +198,10 @@ public class DBReader {
         crateKeyClear.close();
 
 
-
-        for(VirtualCrate crate : HuskyCrates.instance.crateUtilities.crateTypes.values()){
-            for(String keyUUID : crate.pendingKeys.keySet()){
+        for (VirtualCrate crate : HuskyCrates.instance.crateUtilities.crateTypes.values()) {
+            for (String keyUUID : crate.pendingKeys.keySet()) {
                 int amount = crate.pendingKeys.get(keyUUID);
-                dbConnection.prepareStatement("INSERT INTO VALIDKEYS(keyUUID,crateID,amount) VALUES('" + keyUUID + "','"  + crate.id + "'," + amount + ")").executeUpdate();
+                dbConnection.prepareStatement("INSERT INTO VALIDKEYS(keyUUID,crateID,amount) VALUES('" + keyUUID + "','" + crate.id + "'," + amount + ")").executeUpdate();
                 //System.out.println(g);
             }
 
@@ -215,11 +215,10 @@ public class DBReader {
         keyBalClear.close();
 
 
-
-        for(String vcID : HuskyCrates.instance.crateUtilities.getCrateTypes()){
+        for (String vcID : HuskyCrates.instance.crateUtilities.getCrateTypes()) {
             VirtualCrate vc = HuskyCrates.instance.crateUtilities.getVirtualCrate(vcID);
             String crateID = vc.id;
-            for(String uuid : vc.virtualBalances.keySet()) {
+            for (String uuid : vc.virtualBalances.keySet()) {
                 int amount = vc.virtualBalances.get(uuid);
                 dbConnection.prepareStatement("INSERT INTO KEYBALANCES(userUUID,crateID,amount) VALUES('" + uuid + "','" + crateID + "'," + amount + ")").executeUpdate();
             }

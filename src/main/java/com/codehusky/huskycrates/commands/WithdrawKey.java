@@ -15,13 +15,14 @@ import com.codehusky.huskycrates.HuskyCrates;
 
 /**
  * Created By KasperFranz.
- *
+ * <p>
  * This CommandExecutor is used to get the crate item.
  */
 public class WithdrawKey implements CommandExecutor {
 
-    @Override public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
-        if(commandContext.getOne("type").isPresent()) {
+    @Override
+    public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
+        if (commandContext.getOne("type").isPresent()) {
             if (!(commandSource instanceof Player)) {
                 commandSource.sendMessage(Text.of("You need to be in game or specify a player for this command to work."));
                 return CommandResult.empty();
@@ -35,23 +36,23 @@ public class WithdrawKey implements CommandExecutor {
                 return CommandResult.empty();
             }
             int balance = virtualCrate.getVirtualKeyBalance(player);
-            if(balance >= quantity && quantity > 0){
+            if (balance >= quantity && quantity > 0) {
                 ItemStack key = virtualCrate.getCrateKey(quantity);
                 virtualCrate.takeVirtualKeys(player, quantity);
                 player.getInventory().offer(key);
                 commandSource.sendMessage(TextSerializers.FORMATTING_CODE.deserialize(
-                        virtualCrate.getLangData().formatter(virtualCrate.getLangData().withdrawSuccess,null,player,virtualCrate,null,null,quantity)
+                        virtualCrate.getLangData().formatter(virtualCrate.getLangData().withdrawSuccess, null, player, virtualCrate, null, null, quantity)
                 ));
-            }else{
-                if(quantity <= 0){
+            } else {
+                if (quantity <= 0) {
                     player.sendMessage(Text.of(TextColors.RED, "Positive integer amounts only."));
-                }else {
+                } else {
                     commandSource.sendMessage(TextSerializers.FORMATTING_CODE.deserialize(
-                            virtualCrate.getLangData().formatter(virtualCrate.getLangData().withdrawInsufficient,null,player,virtualCrate,null,null,quantity)
+                            virtualCrate.getLangData().formatter(virtualCrate.getLangData().withdrawInsufficient, null, player, virtualCrate, null, null, quantity)
                     ));
                 }
             }
-        }else{
+        } else {
             commandSource.sendMessage(Text.of("Usage: /crate withdraw <id> [count]"));
         }
         return CommandResult.success();

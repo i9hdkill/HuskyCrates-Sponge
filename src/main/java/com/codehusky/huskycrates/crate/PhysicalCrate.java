@@ -26,16 +26,16 @@ public class PhysicalCrate {
     public VirtualCrate vc;
     public ArmorStand as = null;
     public boolean isEntity = false;
-    double randomTimeOffset = new Random().nextDouble()*2000;
-    public static Vector3d offset = new Vector3d(0.5,1,0.5);
-    public HashMap<UUID,LocalDateTime> lastUsed = new HashMap<>();
-    public void handleUse(Player player){
-        if(lastUsed.containsKey(player.getUniqueId())){
-            lastUsed.remove(player.getUniqueId());
-        }
+    double randomTimeOffset = new Random().nextDouble() * 2000;
+    public static Vector3d offset = new Vector3d(0.5, 1, 0.5);
+    public HashMap<UUID, LocalDateTime> lastUsed = new HashMap<>();
+
+    public void handleUse(Player player) {
+        lastUsed.remove(player.getUniqueId());
         lastUsed.put(player.getUniqueId(), LocalDateTime.now());
     }
-    public PhysicalCrate(Location<World> crateLocation, String crateId, HuskyCrates huskyCrates, boolean isEntity){
+
+    public PhysicalCrate(Location<World> crateLocation, String crateId, HuskyCrates huskyCrates, boolean isEntity) {
         this.location = crateLocation;
         this.vc = huskyCrates.crateUtilities.getVirtualCrate(crateId);
 
@@ -50,12 +50,12 @@ public class PhysicalCrate {
             double x = Math.sin(time) * size;
             double y = Math.sin(time * 2) * 0.2 - 0.45;
             double z = Math.cos(time) * size;
-            Color clr1 = Color.ofRgb(100,100,100);
+            Color clr1 = Color.ofRgb(100, 100, 100);
             Color clr2 = Color.ofRgb(255, 0, 0);
-            if(vc.getOptions().containsKey("clr1")){
+            if (vc.getOptions().containsKey("clr1")) {
                 clr1 = (Color) vc.getOptions().get("clr1");
             }
-            if(vc.getOptions().containsKey("clr2")){
+            if (vc.getOptions().containsKey("clr2")) {
                 clr2 = (Color) vc.getOptions().get("clr2");
             }
             as.getWorld().spawnParticles(
@@ -78,7 +78,7 @@ public class PhysicalCrate {
                     as.getLocation()
                             .getPosition()
                             .add(x, y, z));
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
     }

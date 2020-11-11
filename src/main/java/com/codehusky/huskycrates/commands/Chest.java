@@ -17,13 +17,14 @@ import java.util.Optional;
 
 /**
  * Created By KasperFranz.
- *
+ * <p>
  * This CommandExecutor is used to get the crate placeable chest.
  */
 public class Chest implements CommandExecutor {
 
-    @Override public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
-        if(commandContext.getOne("type").isPresent()) {
+    @Override
+    public CommandResult execute(CommandSource commandSource, CommandContext commandContext) throws CommandException {
+        if (commandContext.getOne("type").isPresent()) {
             String type = commandContext.<String>getOne("type").get();
             Optional<Player> player = commandContext.getOne("player");
             VirtualCrate virtualCrate = HuskyCrates.instance.getCrateUtilities().getVirtualCrate(type);
@@ -43,18 +44,18 @@ public class Chest implements CommandExecutor {
             InventoryTransactionResult.Type mainInventory = player.get().getInventory().offer(chestItemStack.copy()).getType();
             if (!mainInventory.equals(InventoryTransactionResult.Type.SUCCESS)) {
                 InventoryTransactionResult.Type enderInventory = player.get().getEnderChestInventory().offer(chestItemStack.copy()).getType();
-                if(!enderInventory.equals(InventoryTransactionResult.Type.SUCCESS)) {
+                if (!enderInventory.equals(InventoryTransactionResult.Type.SUCCESS)) {
                     commandSource.sendMessage(Text.of("Couldn't give chest to " + player.get().getName() + " because of a full inventory and enderchest"));
                     HuskyCrates.instance.logger.info("Couldn't give chest to " + player.get().getName() + " because of a full inventory and enderchest");
-                }else{
-                    if(player.isPresent()) {
-                        player.get().sendMessage(Text.of("You have been given 1 or more ", TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName) ," crate(s), but some have been placed in your Ender Chest."));
-                    }else{
-                        commandSource.sendMessage(Text.of("You have been given 1 or more ", TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName) ," crate(s), but some have been placed in your Ender Chest."));
+                } else {
+                    if (player.isPresent()) {
+                        player.get().sendMessage(Text.of("You have been given 1 or more ", TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName), " crate(s), but some have been placed in your Ender Chest."));
+                    } else {
+                        commandSource.sendMessage(Text.of("You have been given 1 or more ", TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName), " crate(s), but some have been placed in your Ender Chest."));
                     }
                 }
             }
-        }else{
+        } else {
             commandSource.sendMessage(Text.of("Usage: /crate chest <id> [player]"));
         }
 

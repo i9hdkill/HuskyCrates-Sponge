@@ -24,27 +24,30 @@ public class CrateView {
     VirtualCrate vc;
     Player ourplr;
     ArrayList<Object[]> items;
-    public Inventory getInventory(){
+
+    public Inventory getInventory() {
         return null;
     }
+
     //empty class for organization and such
-    public void scrambleRewards(){
+    public void scrambleRewards() {
         ArrayList<Object[]> scrambled = new ArrayList<>();
         ArrayList<Object[]> toSift = (ArrayList<Object[]>) items.clone();
-        while(toSift.size() > 0){
+        while (toSift.size() > 0) {
             //System.out.println(toSift.size());
             int pick;
-            if(toSift.size() == 1) pick = 0;
-            else pick = new Random().nextInt(toSift.size()-1);
+            if (toSift.size() == 1) pick = 0;
+            else pick = new Random().nextInt(toSift.size() - 1);
             scrambled.add(toSift.get(pick));
             toSift.remove(pick);
         }
         items = scrambled;
     }
+
     public int itemIndexSelected() throws RandomItemSelectionFailureException {
-        double random = new Random().nextFloat()*vc.getMaxProb();
+        double random = new Random().nextFloat() * vc.getMaxProb();
         double cummProb = 0;
-        for(int i = 0; i < items.size(); i++) {
+        for (int i = 0; i < items.size(); i++) {
             cummProb += ((double) items.get(i)[0]);
             if (random <= cummProb) {
                 return i;
@@ -52,8 +55,9 @@ public class CrateView {
         }
         throw new RandomItemSelectionFailureException();
     }
-    public void handleReward(CrateReward giveToPlayer){
-        for(Object reward : giveToPlayer.getRewards()) {
+
+    public void handleReward(CrateReward giveToPlayer) {
+        for (Object reward : giveToPlayer.getRewards()) {
             //System.out.println(reward);
             if (reward instanceof String) {
                 Sponge.getCommandManager().process(new CrateCommandSource(), reward.toString().replace("%p", ourplr.getName()));

@@ -31,6 +31,7 @@ public class CrateUtilities {
     public CrateUtilities(HuskyCrates plugin){
         this.plugin = plugin;
     }
+
     public void launchCrateForPlayer(String crateType, Player target,HuskyCrates plugin){
         if(!crateTypes.containsKey(crateType)) {
             target.openInventory(new NullCrateView(plugin,target,null).getInventory());
@@ -42,6 +43,7 @@ public class CrateUtilities {
             }
         }
     }
+
     public VirtualCrate getVirtualCrate(String id){
         if(crateTypes.containsKey(id)){
             return crateTypes.get(id);
@@ -50,7 +52,6 @@ public class CrateUtilities {
     }
 
     public void generateVirtualCrates(ConfigurationLoader<CommentedConfigurationNode> config){
-
         //System.out.println("GEN VC CALLED");
         try {
             CommentedConfigurationNode configRoot = config.load();
@@ -77,7 +78,9 @@ public class CrateUtilities {
         }
         hasInitalizedVirtualCrates = true;
     }
+
     private Task runner = null;
+
     public void startParticleEffects(){
         if(runner != null){
             runner.cancel();
@@ -86,6 +89,7 @@ public class CrateUtilities {
         Task.Builder taskBuilder = scheduler.createTaskBuilder();
         runner = taskBuilder.execute(this::particleRunner).intervalTicks(1).submit(plugin);
     }
+
     /*public void recognizeChest(Location<World> location){
         if(physicalCrates.containsKey(location)) return;
         String id = null;
@@ -98,7 +102,9 @@ public class CrateUtilities {
         }
 
     }*/
+
     public boolean flag = false;
+
     private void particleRunner(){
         if(flag)
             return;

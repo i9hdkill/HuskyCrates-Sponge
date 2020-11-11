@@ -11,10 +11,6 @@ public class HuskyCommandManager {
 
     private HuskyCrates huskyCrates = HuskyCrates.instance;
 
-
-    public CommandSpec getHuskySpec() {
-        return huskySpec;
-    }
     public CommandSpec getCrateSpec() {
         return crateSpec;
     }
@@ -111,17 +107,13 @@ public class HuskyCommandManager {
             .child(key, "key")
             .child(chest, "chest")
             .child(keyAll, "keyAll")
-            .child(vKey, "vkey","virtualkey")
-            .child(vKeyAll, "vkeyall","virtualkeyall")
-            .child(keyBal,"bal","keybal")
+            .child(vKey, "vkey", "virtualkey")
+            .child(vKeyAll, "vkeyall", "virtualkeyall")
+            .child(keyBal, "bal", "keybal")
             .child(wand, "wand")
-            .child(deposit, "deposit","depositkey","ptov")
-            .child(withdraw, "withdraw","withdrawkey","vtop")
+            .child(deposit, "deposit", "depositkey", "ptov")
+            .child(withdraw, "withdraw", "withdrawkey", "vtop")
             .arguments(GenericArguments.optional(GenericArguments.remainingRawJoinedStrings(Text.of(""))))
             .executor(new Crate(huskyCrates))
             .build();
-    CommandSpec huskySpec = CommandSpec.builder()
-            .executor(new Husky(huskyCrates))
-            .build();
-
 }

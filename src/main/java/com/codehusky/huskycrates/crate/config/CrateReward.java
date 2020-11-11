@@ -13,6 +13,7 @@ public class CrateReward {
     private String rewardName;
     private boolean shouldAnnounce;
     private boolean single;
+
     public CrateReward(ItemStack disp, ArrayList<Object> rewards, String rewardName, double chance, LangData langData, boolean shouldAnnounce, boolean single) {
         this.rewards = rewards;
         this.displayItem = disp;
@@ -46,6 +47,7 @@ public class CrateReward {
     public boolean shouldAnnounce() {
         return shouldAnnounce;
     }
+
     public boolean treatAsSingle() {
         return single;
     }

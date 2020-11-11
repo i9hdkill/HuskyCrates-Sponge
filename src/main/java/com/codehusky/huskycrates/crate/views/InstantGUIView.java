@@ -27,24 +27,25 @@ public class InstantGUIView extends CrateView {
     private Inventory disp;
     private Task updater;
     private CrateReward holder = null;
-    public InstantGUIView(HuskyCrates plugin, Player runner, VirtualCrate virtualCrate){
+
+    public InstantGUIView(HuskyCrates plugin, Player runner, VirtualCrate virtualCrate) {
         //System.out.println("AA");
         this.plugin = plugin;
         vc = virtualCrate;
         ourplr = runner;
         items = vc.getItemSet();
-        if(virtualCrate.scrambleRewards){
+        if (virtualCrate.scrambleRewards) {
             scrambleRewards();
         }
         disp = Inventory.builder()
                 .of(InventoryArchetypes.DISPENSER)
-                .listener(InteractInventoryEvent.class, evt ->{
-                    if(!(evt instanceof InteractInventoryEvent.Open) && !(evt instanceof  InteractInventoryEvent.Close)){
+                .listener(InteractInventoryEvent.class, evt -> {
+                    if (!(evt instanceof InteractInventoryEvent.Open) && !(evt instanceof InteractInventoryEvent.Close)) {
                         evt.setCancelled(true);
                     }
 
                 })
-                .property(InventoryTitle.PROPERTY_NAME,InventoryTitle.of(TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName)))
+                .property(InventoryTitle.PROPERTY_NAME, InventoryTitle.of(TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName)))
                 .build(plugin);
         updateInv(0);
         Scheduler scheduler = Sponge.getScheduler();
@@ -54,51 +55,56 @@ public class InstantGUIView extends CrateView {
             updater.cancel();
             ourplr.closeInventory();
             handleReward(holder);
-            ourplr.playSound(SoundTypes.ENTITY_EXPERIENCE_ORB_PICKUP,ourplr.getLocation().getPosition(),1);
+            ourplr.playSound(SoundTypes.ENTITY_EXPERIENCE_ORB_PICKUP, ourplr.getLocation().getPosition(), 1);
         }).delay(3, TimeUnit.SECONDS).submit(HuskyCrates.instance);
     }
+
     private int tickCount = 0;
-    private void updateInv(int state){
+
+    private void updateInv(int state) {
         int slotNum = 0;
-        for(Inventory e : disp.slots()){
+        for (Inventory e : disp.slots()) {
             double speed = 3;
             double confettiSpeed = 2;
-            if(slotNum != 4) {
+            if (slotNum != 4) {
                 if (tickCount == 0 || Math.round(tickCount / confettiSpeed) > Math.round((tickCount - 1) / confettiSpeed)) {
                     e.set(confetti());
                 } else {
                     e.set(e.peek().get());
                 }
-            }else if(holder == null){
+            } else if (holder == null) {
                 try {
                     int i = itemIndexSelected();
-                    e.set(((CrateReward)items.get(i)[1]).getDisplayItem());
-                    holder = (CrateReward)items.get(i)[1];
-                    ourplr.playSound(SoundTypes.ENTITY_FIREWORK_LAUNCH,ourplr.getLocation().getPosition(),1);
+                    e.set(((CrateReward) items.get(i)[1]).getDisplayItem());
+                    holder = (CrateReward) items.get(i)[1];
+                    ourplr.playSound(SoundTypes.ENTITY_FIREWORK_LAUNCH, ourplr.getLocation().getPosition(), 1);
                 } catch (RandomItemSelectionFailureException e1) {
                     plugin.logger.error("Random Item Selection failed in Roulette Crate View: " + vc.displayName);
                 }
 
                 //e.set(((CrateRewardHolder)items.get(Math.round(tickCount/2) % items.size())[1]).getDisplayItem());
-            }else{
+            } else {
                 e.set(e.peek().get());
             }
             slotNum++;
         }
     }
-    private ItemStack confetti(){
-        DyeColor[] colors = {DyeColors.BLUE,DyeColors.CYAN,DyeColors.LIME,DyeColors.LIGHT_BLUE,DyeColors.MAGENTA,DyeColors.ORANGE,DyeColors.PINK,DyeColors.PURPLE,DyeColors.RED,DyeColors.YELLOW};
-        ItemStack g =ItemStack.builder()
+
+    private ItemStack confetti() {
+        DyeColor[] colors = {DyeColors.BLUE, DyeColors.CYAN, DyeColors.LIME, DyeColors.LIGHT_BLUE, DyeColors.MAGENTA, DyeColors.ORANGE, DyeColors.PINK, DyeColors.PURPLE, DyeColors.RED, DyeColors.YELLOW};
+        ItemStack g = ItemStack.builder()
                 .itemType(ItemTypes.STAINED_GLASS_PANE)
-                .add(Keys.DYE_COLOR,colors[(int)Math.floor(Math.random() * colors.length)])
+                .add(Keys.DYE_COLOR, colors[(int) Math.floor(Math.random() * colors.length)])
                 .build();
         g.offer(Keys.DISPLAY_NAME, Text.of("HuskyCrates"));
         return g;
     }
+
     private void updateTick() {
         updateInv(0);
         tickCount++;
     }
+
     @Override
     public Inventory getInventory() {
         return disp;
