@@ -27,7 +27,7 @@ import java.util.Random;
 /**
  * Created by lokio on 12/28/2016.
  */
-@SuppressWarnings("deprecation")
+
 public class SpinnerCrateView extends CrateView {
     private Inventory disp;
     private Task updater;

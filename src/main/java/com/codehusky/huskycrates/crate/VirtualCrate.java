@@ -33,7 +33,7 @@ import java.util.*;
 /**
  * Created by lokio on 12/29/2016.
  */
-@SuppressWarnings("deprecation")
+
 public class VirtualCrate {
     private ArrayList<Object[]> itemSet;
     private HashMap<ItemStack, String> commandSet;
@@ -106,7 +106,6 @@ public class VirtualCrate {
                 }
             }
             if(!gops.getNode("particle1").isVirtual()){
-                HashMap<String,Integer> color = new HashMap<>();
                 if(!gops.getNode("particle1","color").isVirtual()){
                     List<Integer> arr;
                     try {
@@ -128,7 +127,6 @@ public class VirtualCrate {
 
             }
             if(!gops.getNode("particle2").isVirtual()){
-                HashMap<String,Integer> color = new HashMap<>();
                 if(!gops.getNode("particle2","color").isVirtual()){
                     List<Integer> arr;
                     try {

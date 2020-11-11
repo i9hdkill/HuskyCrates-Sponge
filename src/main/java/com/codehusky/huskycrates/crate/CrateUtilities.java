@@ -8,7 +8,6 @@ import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.scheduler.Scheduler;
 import org.spongepowered.api.scheduler.Task;
@@ -23,7 +22,7 @@ import java.util.*;
 /**
  * Created by lokio on 12/28/2016.
  */
-@SuppressWarnings("deprecation")
+
 public class CrateUtilities {
     public HashMap<String,VirtualCrate> crateTypes = new HashMap<>();
     public HashMap<Location<World>,PhysicalCrate> physicalCrates = new HashMap<>();
@@ -49,9 +48,9 @@ public class CrateUtilities {
         }
         return null;
     }
-    private ArrayList<Location<World>> toCheck;
+
     public void generateVirtualCrates(ConfigurationLoader<CommentedConfigurationNode> config){
-        toCheck = new ArrayList<>();
+
         //System.out.println("GEN VC CALLED");
         try {
             CommentedConfigurationNode configRoot = config.load();
@@ -184,7 +183,7 @@ public class CrateUtilities {
             }
         }
         if (key.isPresent()) {
-            if (key.get().getItem() == crate.vc.getKeyType()) {
+            if (key.get().getType() == crate.vc.getKeyType()) {
                 if (key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
                     if(key.get().toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).isPresent()) {
                         String id = key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString();

@@ -2,15 +2,11 @@ package com.codehusky.huskycrates.crate;
 
 import com.flowpowered.math.vector.Vector3d;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.effect.particle.ParticleEffect;
 import org.spongepowered.api.effect.particle.ParticleOptions;
 import org.spongepowered.api.effect.particle.ParticleTypes;
-import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.ArmorStand;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.serializer.TextSerializers;
 import org.spongepowered.api.util.Color;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -27,10 +23,8 @@ import java.util.UUID;
 
 public class PhysicalCrate {
     public Location<World> location;
-    private String crateId;
     public VirtualCrate vc;
     public ArmorStand as = null;
-    private HuskyCrates huskyCrates;
     public boolean isEntity = false;
     double randomTimeOffset = new Random().nextDouble()*2000;
     public static Vector3d offset = new Vector3d(0.5,1,0.5);
@@ -43,47 +37,13 @@ public class PhysicalCrate {
     }
     public PhysicalCrate(Location<World> crateLocation, String crateId, HuskyCrates huskyCrates, boolean isEntity){
         this.location = crateLocation;
-        this.crateId = crateId;
-        this.huskyCrates = huskyCrates;
         this.vc = huskyCrates.crateUtilities.getVirtualCrate(crateId);
-        if(crateLocation != null)
-            createHologram();
 
         this.isEntity = isEntity;
     }
-    public void createHologram() {
-        if(location.getExtent().getChunk(location.getChunkPosition()).isPresent()) {
-            if (location.getExtent().getChunk(location.getChunkPosition()).get().isLoaded()) {
-                if (as == null || !as.isLoaded()) {
-                    if (!isEntity) {
-                        as = (ArmorStand) location.getExtent().createEntity(EntityTypes.ARMOR_STAND, location.getPosition().add(offset));
-                    } else {
-                        as = (ArmorStand) location.getExtent().createEntity(EntityTypes.ARMOR_STAND, location.getPosition().add(0, 1, 0));
-                    }
-                    as.setCreator(UUID.fromString(huskyCrates.armorStandIdentifier));
-                    as.offer(Keys.HAS_GRAVITY, false);
-                    as.offer(Keys.INVISIBLE, true);
-                    as.offer(Keys.ARMOR_STAND_MARKER, true);
-                    as.offer(Keys.CUSTOM_NAME_VISIBLE, true);
-                    String name = "&cERROR, CHECK CONSOLE!";
-                    try {
-                        name = /*crateId*/ huskyCrates.crateUtilities.getVirtualCrate(crateId).displayName;
-                    } catch (Exception e) {
-                        //e.printStackTrace();
-                    }
-                    as.offer(Keys.DISPLAY_NAME, TextSerializers.FORMATTING_CODE.deserialize(name));
-                    boolean worked = location.getExtent().spawnEntity(as);
-                    if (!worked) {
-                        as = null;
-                        return;
-                    }
-                }
-            }
-        }
-    }
+
     void runParticles() {
         try {
-            createHologram();
             double time = randomTimeOffset + (Sponge.getServer().getRunningTimeTicks() * 0.25);
             double size = 0.8;
 

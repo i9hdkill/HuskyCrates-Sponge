@@ -17,3 +17,8 @@ target/
 # gradle
 .gradle/
 build/
+
+#ide
+.settings/
+.project
+.classpath
