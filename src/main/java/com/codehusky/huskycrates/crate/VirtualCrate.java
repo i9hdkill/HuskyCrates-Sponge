@@ -44,7 +44,7 @@ public class VirtualCrate {
     public int crateBlockDamage = 0;
     public String crateType;
     private float maxProb = 100;
-    private HashMap<String, Object> options = new HashMap<>();
+    private final HashMap<String, Object> options = new HashMap<>();
     public HashMap<String, Integer> pendingKeys = new HashMap<>();
     public HashMap<String, Integer> virtualBalances = new HashMap<>();
     private ItemType keyType;
@@ -169,10 +169,8 @@ public class VirtualCrate {
         float currentProb = 0;
         itemSet = new ArrayList<>();
         commandSet = new HashMap<>();
-        ///System.out.println("???");
         for (CommentedConfigurationNode e : items) {
-            CrateReward rewardHolder = null;
-//            System.out.println(e.getNode("formatversion").getValue());
+            CrateReward rewardHolder;
             if (e.getNode("formatversion").isVirtual()) {
                 HuskyCrates.instance.logger.error("Out of date item in " + id + "! Please update your config with HuskyCrates Config Updater!");
                 continue;
@@ -194,7 +192,6 @@ public class VirtualCrate {
                 Object[] hj = {equalProb};
                 Object[] fin = ArrayUtils.addAll(hj, item);
                 currentProb += equalProb;
-                //System.out.println((float)fin[0]);
                 itemSet.add(fin);
             }
         } else {
@@ -206,7 +203,6 @@ public class VirtualCrate {
 
         try {
             CommentedConfigurationNode root = config.load();
-            //System.out.println(root.getNode("keys"));
             if (!root.getNode("keys").isVirtual()) {
                 HuskyCrates.instance.logger.warn("Legacy key data detected. As long as you have placed crates, we'll convert.");
                 if (root.getNode("keys", id).hasListChildren()) {
@@ -230,8 +226,6 @@ public class VirtualCrate {
             HuskyCrates.instance.logger.error("Failed to load key UUIDs. Keys will not work!");
             e.printStackTrace();
         }
-
-        //Self resolving crate
     }
 
     public ArrayList<Object[]> getItemSet() {
@@ -259,7 +253,6 @@ public class VirtualCrate {
         return new NullCrateView(plugin, plr, this);
     }
 
-
     /***
      * Retrieve the crate item
      * @since 0.10.2
@@ -278,12 +271,7 @@ public class VirtualCrate {
             key = ItemStack.builder().fromContainer(key.toContainer().set(DataQuery.of("UnsafeDamage"), keyDamage)).build();
         }
         String keyUUID = registerKey(quantity);
-        if (keyUUID == null) {
-            HuskyCrates.instance.logger.error("Throwing NullPointerException: Key failed to register.");
-            throw new NullPointerException();
-        }
         return ItemStack.builder().fromContainer(key.toContainer().set(DataQuery.of("UnsafeData", "crateID"), id).set(DataQuery.of("UnsafeData", "keyUUID"), keyUUID)).build();//
-
     }
 
     /***

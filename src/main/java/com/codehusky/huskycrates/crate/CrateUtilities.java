@@ -17,58 +17,63 @@ import com.codehusky.huskycrates.HuskyCrates;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by lokio on 12/28/2016.
  */
 
 public class CrateUtilities {
-    public HashMap<String,VirtualCrate> crateTypes = new HashMap<>();
-    public HashMap<Location<World>,PhysicalCrate> physicalCrates = new HashMap<>();
+    public HashMap<String, VirtualCrate> crateTypes = new HashMap<>();
+    public HashMap<Location<World>, PhysicalCrate> physicalCrates = new HashMap<>();
     public boolean hasInitalizedVirtualCrates = false;
-    private HuskyCrates plugin;
-    public CrateUtilities(HuskyCrates plugin){
+    private final HuskyCrates plugin;
+
+    public CrateUtilities(HuskyCrates plugin) {
         this.plugin = plugin;
     }
 
-    public void launchCrateForPlayer(String crateType, Player target,HuskyCrates plugin){
-        if(!crateTypes.containsKey(crateType)) {
-            target.openInventory(new NullCrateView(plugin,target,null).getInventory());
-        }else{
-            if(crateTypes.get(crateType).isGUI) {
+    public void launchCrateForPlayer(String crateType, Player target, HuskyCrates plugin) {
+        if (!crateTypes.containsKey(crateType)) {
+            target.openInventory(new NullCrateView(plugin, target, null).getInventory());
+        } else {
+            if (crateTypes.get(crateType).isGUI) {
                 target.openInventory(crateTypes.get(crateType).generateViewForCrate(plugin, target).getInventory());
-            }else{
+            } else {
                 crateTypes.get(crateType).generateViewForCrate(plugin, target);
             }
         }
     }
 
-    public VirtualCrate getVirtualCrate(String id){
-        if(crateTypes.containsKey(id)){
+    public VirtualCrate getVirtualCrate(String id) {
+        if (crateTypes.containsKey(id)) {
             return crateTypes.get(id);
         }
         return null;
     }
 
-    public void generateVirtualCrates(ConfigurationLoader<CommentedConfigurationNode> config){
-        //System.out.println("GEN VC CALLED");
+    public void generateVirtualCrates(ConfigurationLoader<CommentedConfigurationNode> config) {
         try {
             CommentedConfigurationNode configRoot = config.load();
             crateTypes = new HashMap<>();
-            Map<Object,? extends CommentedConfigurationNode> b = configRoot.getNode("crates").getChildrenMap();
-            for(Object prekey: b.keySet()){
+            Map<Object, ? extends CommentedConfigurationNode> b = configRoot.getNode("crates").getChildrenMap();
+            for (Object prekey : b.keySet()) {
                 String key = (String) prekey;
-                crateTypes.put(key,new VirtualCrate(key,config,configRoot.getNode("crates",key)));
+                crateTypes.put(key, new VirtualCrate(key, config, configRoot.getNode("crates", key)));
             }
             config.save(configRoot);
         } catch (Exception e) {
             HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
             HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
             HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
-            if(e instanceof IOException){
+            if (e instanceof IOException) {
                 HuskyCrates.instance.logger.error("CONFIG AT LINE " + e.getMessage().substring(e.getMessage().indexOf("Reader: ") + 8));
-            }else{
+            } else {
                 HuskyCrates.instance.logger.error("genVirtualCrates Failure");
                 e.printStackTrace();
             }
@@ -81,8 +86,8 @@ public class CrateUtilities {
 
     private Task runner = null;
 
-    public void startParticleEffects(){
-        if(runner != null){
+    public void startParticleEffects() {
+        if (runner != null) {
             runner.cancel();
         }
         Scheduler scheduler = Sponge.getScheduler();
@@ -90,23 +95,10 @@ public class CrateUtilities {
         runner = taskBuilder.execute(this::particleRunner).intervalTicks(1).submit(plugin);
     }
 
-    /*public void recognizeChest(Location<World> location){
-        if(physicalCrates.containsKey(location)) return;
-        String id = null;
-        try {
-            id = getTypeFromLocation(location);
-        } catch (Exception e) {}
-        if(id != null){
-            physicalCrates.put(location,new PhysicalCrate(location,id,plugin));
-            HuskyCrates.instance.updatePhysicalCrates();
-        }
-
-    }*/
-
     public boolean flag = false;
 
-    private void particleRunner(){
-        if(flag)
+    private void particleRunner() {
+        if (flag)
             return;
         try {
             ArrayList<Location<World>> invalidLocations = new ArrayList<>();
@@ -115,7 +107,7 @@ public class CrateUtilities {
                 PhysicalCrate c = physicalCrates.get(b);
 
                 if (c.vc.crateBlockType != c.location.getBlock().getType() && c.location.getExtent().isLoaded() && c.location.getExtent().getChunk(c.location.getChunkPosition()).isPresent()) {
-                    if(c.location.getExtent().getChunk(c.location.getChunkPosition()).get().isLoaded()) {
+                    if (c.location.getExtent().getChunk(c.location.getChunkPosition()).get().isLoaded()) {
                         invalidLocations.add(c.location);
                         invalidLocationWorlds.add(c.location.getExtent());
                         continue;
@@ -123,29 +115,28 @@ public class CrateUtilities {
                 }
                 c.runParticles();
             }
-            for(World w : invalidLocationWorlds) {
+            for (World w : invalidLocationWorlds) {
                 for (Entity e : w.getEntities()) {
                     if (invalidLocations.contains(e.getLocation()) && e.getType() != EntityTypes.ARMOR_STAND) {
-                        //System.out.println("woah");
                         invalidLocations.remove(e.getLocation());
                         physicalCrates.get(e.getLocation()).runParticles();
 
                     }
                 }
             }
-            for(Location<World> l : invalidLocations){
+            for (Location<World> l : invalidLocations) {
                 PhysicalCrate c = physicalCrates.get(l);
                 HuskyCrates.instance.logger.warn("Removing crate that no longer exists! " + c.location.getPosition().toString());
-                if(c.as != null){
+                if (c.as != null) {
                     c.as.remove();
                 }
                 physicalCrates.remove(l);
                 flag = true;
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        if(flag)
+        if (flag)
             HuskyCrates.instance.updatePhysicalCrates();
     }
 
@@ -156,31 +147,31 @@ public class CrateUtilities {
     public List<String> getCrateTypes() {
         return new ArrayList<>(crateTypes.keySet());
     }
-    public VirtualCrate vcFromKey(ItemStack key){
+
+    public VirtualCrate vcFromKey(ItemStack key) {
         if (key.toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
             String id = key.toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString();
             if (crateTypes.keySet().contains(id)) {
-                if(isAcceptedKey(crateTypes.get(id),Optional.of(key),null) == 1){
+                if (isAcceptedKey(crateTypes.get(id), Optional.of(key), null) == 1) {
                     return crateTypes.get(id);
                 }
             }
         }
         return null;
     }
+
     public int isAcceptedKey(VirtualCrate crate, Optional<ItemStack> key, Player using) {
-        return isAcceptedKey(new PhysicalCrate(null,crate.id,HuskyCrates.instance,false),key,using);
+        return isAcceptedKey(new PhysicalCrate(null, crate.id, HuskyCrates.instance, false), key, using);
     }
-    public int isAcceptedKey(PhysicalCrate crate, Optional<ItemStack> key, Player using) {
+
+    public int isAcceptedKey(PhysicalCrate crate, Optional<ItemStack> keyOpt, Player using) {
         if (crate != null) {
-            if(crate.vc.freeCrate) {
-                //System.out.println("FREE?");
+            if (crate.vc.freeCrate) {
                 if (!crate.lastUsed.containsKey(using.getUniqueId())) {
                     return 1;
                 } else {
-                    //System.out.println(crate.vc.getOptions());
                     LocalDateTime lastUsed = crate.lastUsed.get(using.getUniqueId());
                     LocalDateTime minimumWait = lastUsed.plusSeconds((int) crate.vc.getOptions().get("freeCrateDelay"));
-                    //HuskyCrates.instance.logger.info("" + LocalDateTime.now().compareTo(minimumWait));
                     if (LocalDateTime.now().compareTo(minimumWait) > 0) {
                         return 1;
                     }
@@ -188,37 +179,39 @@ public class CrateUtilities {
                 }
             }
         }
-        if (key.isPresent()) {
-            if (key.get().getType() == crate.vc.getKeyType()) {
-                if (key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
-                    if(key.get().toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).isPresent()) {
-                        String id = key.get().toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString();
-                        String keyUUID = key.get().toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).get().toString();
+        if (keyOpt.isPresent()) {
+            ItemStack key = keyOpt.get();
+            if (key.getType() == crate.vc.getKeyType()) {
+                if (key.toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
+                    if (key.toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).isPresent()) {
+                        String id = key.toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString();
+                        String keyUUID = key.toContainer().get(DataQuery.of("UnsafeData", "keyUUID")).get().toString();
                         if (id.equals(crate.vc.id)) {
-                            if(using.hasPermission("huskycrates.tester") && crate.vc.keyIsValid(keyUUID)){
+                            if (using.hasPermission("huskycrates.tester") && crate.vc.keyIsValid(keyUUID)) {
                                 return 1;
-                            }else if(using.hasPermission("huskycrates.tester")){
+                            } else if (using.hasPermission("huskycrates.tester")) {
                                 return -3;
                             }
-                            if(useKey(id,keyUUID)) {
+                            if (useKey(id, keyUUID)) {
                                 return 1;
-                            }else{
+                            } else {
                                 return -3; //DUPE! or error.
                             }
                         }
-                    }else{
+                    } else {
                         //legacy key.
                         return -2;
                     }
                 }
             }
         }
-        if(crate.vc.getVirtualKeyBalance(using) > 0){
+        if (crate.vc.getVirtualKeyBalance(using) > 0) {
             return 2;
         }
         return 0;
     }
-    public void exceptionHandler(Exception e){
+
+    public void exceptionHandler(Exception e) {
         HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
         HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
         HuskyCrates.instance.logger.error("!!!!! Config loading has failed! !!!!!");
@@ -231,8 +224,8 @@ public class CrateUtilities {
         HuskyCrates.instance.logger.error("If you're having trouble solving this issue, join the support discord: https://discord.gg/FSETtcx");
     }
 
-    public boolean useKey(String crateID,String uuid){
-        if(crateTypes.containsKey(crateID)){
+    public boolean useKey(String crateID, String uuid) {
+        if (crateTypes.containsKey(crateID)) {
             return getVirtualCrate(crateID).expireKey(uuid);
         }
         return false;

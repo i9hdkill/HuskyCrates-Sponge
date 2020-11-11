@@ -11,11 +11,13 @@ import com.codehusky.huskyui.states.Page;
 import com.codehusky.huskyui.states.element.Element;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.pixelmonmod.pixelmon.entities.pixelmon.EntityStatue;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.config.ConfigDir;
@@ -26,13 +28,13 @@ import org.spongepowered.api.data.persistence.InvalidDataException;
 import org.spongepowered.api.data.type.DyeColors;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.effect.sound.SoundTypes;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -54,19 +56,19 @@ import com.codehusky.huskycrates.lang.LangData;
 
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * Created by lokio on 12/28/2016.
  */
 
-@Plugin(id = "huskycrates", name = "HuskyCrates", version = "1.8.0", description = "A CratesReloaded Replacement for Sponge? lol", dependencies = {@Dependency(id = "huskyui", version = "0.2.1")})
+@Plugin(id = "huskycrates", name = "HuskyCrates", version = "1.8.1", description = "A CratesReloaded Replacement for Sponge? lol", dependencies = {@Dependency(id = "huskyui", version = "0.2.1")})
 public class HuskyCrates {
     //@Inject
     public Logger logger;
-
 
     @Inject
     public PluginContainer pC;
@@ -78,7 +80,6 @@ public class HuskyCrates {
     @Inject
     @DefaultConfig(sharedRoot = false)
     public ConfigurationLoader<CommentedConfigurationNode> crateConfig;
-    public Cause genericCause;
     public Scheduler scheduler;
     public CrateUtilities crateUtilities = new CrateUtilities(this);
     public String huskyCrateIdentifier = "☼1☼2☼3HUSKYCRATE-";
@@ -93,7 +94,7 @@ public class HuskyCrates {
         instance = this;
         huskyAPI = new HuskyAPI();
 
-        CommentedConfigurationNode conf = null;
+        CommentedConfigurationNode conf;
         try {
             conf = crateConfig.load();
             if (!conf.getNode("lang").isVirtual()) {
@@ -117,102 +118,97 @@ public class HuskyCrates {
 
     @Listener(order = Order.POST)
     public void postGameStart(GameStartedServerEvent event) {
-        Sponge.getScheduler().createTaskBuilder().execute(new Consumer<Task>() {
-            @Override
-            public void accept(Task task) {
-                logger.info("Initalizing config...");
-                if (!crateUtilities.hasInitalizedVirtualCrates) {
-                    crateUtilities.generateVirtualCrates(crateConfig);
-                }
-                crateUtilities.hasInitalizedVirtualCrates = true; // doublecheck
-                logger.info("Done initalizing config.");
-                logger.info("Attempting legacy Physical Crates method (this will be removed in a later version)");
-                CommentedConfigurationNode root = null;
-                boolean convertFired = false;
-                try {
-                    root = crateConfig.load();
-                    double max = root.getNode("positions").getChildrenList().size();
-                    double count = 0;
-                    for (VirtualCrate vc : crateUtilities.crateTypes.values()) {
-                        if (vc.pendingKeys.size() > 0) {
-                            logger.warn("legacy keys loaded! warn warn warn.");
-                            if (!root.getNode("keys").isVirtual()) {
-                                root.removeChild("keys");
-                            }
-                            convertFired = true;
+        Sponge.getScheduler().createTaskBuilder().execute(task -> {
+            logger.info("Initalizing config...");
+            if (!crateUtilities.hasInitalizedVirtualCrates) {
+                crateUtilities.generateVirtualCrates(crateConfig);
+            }
+            crateUtilities.hasInitalizedVirtualCrates = true; // doublecheck
+            logger.info("Done initalizing config.");
+            logger.info("Attempting legacy Physical Crates method (this will be removed in a later version)");
+            CommentedConfigurationNode root;
+            boolean convertFired = false;
+            try {
+                root = crateConfig.load();
+                double max = root.getNode("positions").getChildrenList().size();
+                double count = 0;
+                for (VirtualCrate vc : crateUtilities.crateTypes.values()) {
+                    if (vc.pendingKeys.size() > 0) {
+                        logger.warn("legacy keys loaded! warn warn warn.");
+                        if (!root.getNode("keys").isVirtual()) {
+                            root.removeChild("keys");
                         }
-                    }
-                    if (!root.getNode("positions").isVirtual()) {
                         convertFired = true;
-                        logger.warn("Legacy position data detected. Will convert.");
-                        for (CommentedConfigurationNode node : root.getNode("positions").getChildrenList()) {
-                            count++;
-                            Location<World> ee;
-                            try {
-                                ee = node.getNode("location").getValue(TypeToken.of(Location.class));
-                            } catch (InvalidDataException err2) {
-                                logger.warn("Bug sponge developers about world UUIDs!");
-                                ee = new Location<World>(Sponge.getServer().getWorld(node.getNode("location", "WorldName").getString()).get(), node.getNode("location", "X").getDouble(), node.getNode("location", "Y").getDouble(), node.getNode("location", "Z").getDouble());
-                            }
-                            if (!crateUtilities.physicalCrates.containsKey(ee))
-                                crateUtilities.physicalCrates.put(ee, new PhysicalCrate(ee, node.getNode("crateID").getString(), HuskyCrates.instance, node.getNode("location", "BlockType").getString().equals("minecraft:air")));
-                            logger.info("(LEGACY) PROGRESS: " + Math.round((count / max) * 100) + "%");
-                        }
-                        root.removeChild("positions");
-
-
                     }
-                    if (!root.getNode("users").isVirtual()) {
-                        for (Object uuidPre : root.getNode("users").getChildrenMap().keySet()) {
-                            for (Object crateIDPre : root.getNode("users", uuidPre, "keys").getChildrenMap().keySet()) {
-                                String uuid = uuidPre.toString();
-                                String crateID = crateIDPre.toString();
-                                int amount = root.getNode("users", uuid, "keys", crateID).getInt(0);
-                                HuskyCrates.instance.crateUtilities.crateTypes.get(crateID).virtualBalances.put(uuid, amount);
-                            }
-                        }
-                        root.removeChild("users");
-                    }
-                    crateConfig.save(root);
-
-                } catch (Exception e) {
-                    crateUtilities.exceptionHandler(e);
-                    if (event.getCause().root() instanceof Player) {
-                        CommandSource cs = (CommandSource) event.getCause().root();
-                        cs.sendMessage(Text.of(TextColors.GOLD, "HuskyCrates", TextColors.WHITE, ":", TextColors.RED, " An error has occured. Please check the console for more information."));
-                    }
-                    return;
                 }
-                logger.info("Done with legacy loading technique");
-                logger.info("Running DB routine.");
+                if (!root.getNode("positions").isVirtual()) {
+                    convertFired = true;
+                    logger.warn("Legacy position data detected. Will convert.");
+                    for (CommentedConfigurationNode node : root.getNode("positions").getChildrenList()) {
+                        count++;
+                        Location<World> location;
+                        try {
+                            location = node.getNode("location").getValue(TypeToken.of(Location.class));
+                        } catch (InvalidDataException err2) {
+                            logger.warn("Bug sponge developers about world UUIDs!");
+                            location = new Location<>(Sponge.getServer().getWorld(node.getNode("location", "WorldName").getString()).get(), node.getNode("location", "X").getDouble(), node.getNode("location", "Y").getDouble(), node.getNode("location", "Z").getDouble());
+                        }
+                        if (!crateUtilities.physicalCrates.containsKey(location))
+                            crateUtilities.physicalCrates.put(location, new PhysicalCrate(location, node.getNode("crateID").getString(), HuskyCrates.instance, node.getNode("location", "BlockType").getString().equals("minecraft:air")));
+                        logger.info("(LEGACY) PROGRESS: " + Math.round((count / max) * 100) + "%");
+                    }
+                    root.removeChild("positions");
+                }
+                if (!root.getNode("users").isVirtual()) {
+                    for (Object uuidPre : root.getNode("users").getChildrenMap().keySet()) {
+                        for (Object crateIDPre : root.getNode("users", uuidPre, "keys").getChildrenMap().keySet()) {
+                            String uuid = uuidPre.toString();
+                            String crateID = crateIDPre.toString();
+                            int amount = root.getNode("users", uuid, "keys", crateID).getInt(0);
+                            HuskyCrates.instance.crateUtilities.crateTypes.get(crateID).virtualBalances.put(uuid, amount);
+                        }
+                    }
+                    root.removeChild("users");
+                }
+                crateConfig.save(root);
+
+            } catch (Exception e) {
+                crateUtilities.exceptionHandler(e);
+                if (event.getCause().root() instanceof Player) {
+                    CommandSource cs = (CommandSource) event.getCause().root();
+                    cs.sendMessage(Text.of(TextColors.GOLD, "HuskyCrates", TextColors.WHITE, ":", TextColors.RED, " An error has occured. Please check the console for more information."));
+                }
+                return;
+            }
+            logger.info("Done with legacy loading technique");
+            logger.info("Running DB routine.");
+            try {
+                DBReader.dbInitCheck();
+                if (convertFired) {
+                    logger.info("Saving data.");
+                    DBReader.saveHuskyData();
+                    logger.info("Done saving data.");
+                } else {
+                    logger.info("Loading data.");
+                    DBReader.loadHuskyData();
+                    logger.info("Done loading data.");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            logger.info("DB Data routine finished.");
+            crateUtilities.startParticleEffects();
+
+            logger.info("Initalization complete.");
+            Sponge.getScheduler().createTaskBuilder().execute(() -> {
                 try {
                     DBReader.dbInitCheck();
-                    if (convertFired) {
-                        logger.info("Saving data.");
-                        DBReader.saveHuskyData();
-                        logger.info("Done saving data.");
-                    } else {
-                        logger.info("Loading data.");
-                        DBReader.loadHuskyData();
-                        logger.info("Done loading data.");
-                    }
+                    DBReader.saveHuskyData();
+                    logger.info("Updated Database.");
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
-                logger.info("DB Data routine finished.");
-                crateUtilities.startParticleEffects();
-
-                logger.info("Initalization complete.");
-                Sponge.getScheduler().createTaskBuilder().execute(() -> {
-                    try {
-                        DBReader.dbInitCheck();
-                        DBReader.saveHuskyData();
-                        logger.info("Updated Database.");
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }).interval(15, TimeUnit.MINUTES).delay(15, TimeUnit.MINUTES).async().submit(HuskyCrates.instance);
-            }
+            }).interval(15, TimeUnit.MINUTES).delay(15, TimeUnit.MINUTES).async().submit(HuskyCrates.instance);
         }).delayTicks(1).submit(this);
     }
 
@@ -231,7 +227,7 @@ public class HuskyCrates {
         }
 
         langData = new LangData();
-        CommentedConfigurationNode root = null;
+        CommentedConfigurationNode root;
         try {
             root = crateConfig.load();
             if (!root.getNode("lang").isVirtual())
@@ -263,15 +259,10 @@ public class HuskyCrates {
             Player plr = (Player) event.getCause().root();
 
             if (event instanceof ChangeBlockEvent.Place || event instanceof ChangeBlockEvent.Break) {
-                BlockType t = event.getTransactions().get(0).getOriginal().getLocation().get().getBlock().getType();
                 Location<World> location = event.getTransactions().get(0).getOriginal().getLocation().get();
-                location.getBlock().toContainer().set(DataQuery.of("rock"), 1);
-                //location.getBlock().with()
-                //System.out.println(event instanceof ChangeBlockEvent.Break);
-                if (validCrateBlocks.contains(t)) {
-                    //System.out.println("valid block");
-                    //crateUtilities.recognizeChest(event.getTransactions().get(0).getOriginal().getLocation().get());
-
+                BlockState blockState = location.getBlock();
+                blockState.toContainer().set(DataQuery.of("rock"), 1);
+                if (validCrateBlocks.contains(blockState.getType())) {
                     if (event instanceof ChangeBlockEvent.Place) {
                         if (plr.getItemInHand(HandTypes.MAIN_HAND).isPresent()) {
                             Optional<Object> tt = plr.getItemInHand(HandTypes.MAIN_HAND).get().toContainer().get(DataQuery.of("UnsafeData", "crateID"));
@@ -284,7 +275,6 @@ public class HuskyCrates {
                                 if (!crateUtilities.physicalCrates.containsKey(location))
                                     crateUtilities.physicalCrates.put(location, new PhysicalCrate(location, crateID, this, false));
                                 updatePhysicalCrates();
-                                return;
                             }
                         }
                     }
@@ -349,9 +339,7 @@ public class HuskyCrates {
             }
             Task.Builder upcoming = scheduler.createTaskBuilder();
             crateUtilities.physicalCrates.get(blk).handleUse(plr);
-            upcoming.execute(() -> {
-                crateUtilities.launchCrateForPlayer(crateType, plr, this);
-            }).delayTicks(1).submit(this);
+            upcoming.execute(() -> crateUtilities.launchCrateForPlayer(crateType, plr, this)).delayTicks(1).submit(this);
             return;
 
         } else if (keyResult == -1) {
@@ -405,18 +393,10 @@ public class HuskyCrates {
 
     @Listener
     public void crateInteract(InteractBlockEvent.Secondary.MainHand event) {
-        //System.out.println(crateUtilities.physicalCrates.keySet());
-        //Player pp = (Player) event.getCause().root();
-
-        //ItemStack ss = pp.getItemInHand(HandTypes.MAIN_HAND).get();
-        //System.out.println(ss.toContainer().get(DataQuery.of("UnsafeData")).get());
-
-        //pp.getInventory().offer(ItemStack.builder().fromContainer(ss.toContainer().set(DataQuery.of("UnsafeDamage"),3)).build());*/
         if (!event.getTargetBlock().getLocation().isPresent())
             return;
 
         Location<World> blk = event.getTargetBlock().getLocation().get();
-        //System.out.println(blk.getBlock().getType());
         if (validCrateBlocks.contains(blk.getBlockType())) {
             Player plr = (Player) event.getCause().root();
 
@@ -437,11 +417,10 @@ public class HuskyCrates {
 
     @Listener
     public void onCrateRightClick(InteractBlockEvent.Primary.MainHand event) {
-        //System.out.println("primary interaction");
         if (!(event.getCause().root() instanceof Player)) return;
         Player plr = (Player) event.getCause().root();
         if (!event.getTargetBlock().getLocation().isPresent()) return;
-        Location location = event.getTargetBlock().getLocation().get();
+        Location<World> location = event.getTargetBlock().getLocation().get();
         if (crateUtilities.physicalCrates.containsKey(location)) {
             if (!plr.hasPermission("huskycrates.tester") || plr.hasPermission("huskycrates.tester") && plr.getGameModeData().get(Keys.GAME_MODE).get() != GameModes.CREATIVE) {
                 event.setCancelled(true);
@@ -478,43 +457,45 @@ public class HuskyCrates {
 
     @Listener
     public void entityInteract(InteractEntityEvent.Secondary.MainHand event) {
-        //event.getTargetEntity().(event.getTargetEntity().toContainer().set(DataQuery.of("UnsafeData","crateID"),"blap"));
-        //event.getTargetEntity().()
-        //System.out.println(event.getTargetEntity().toContainer().get(DataQuery.of("UnsafeData","crateID")));
-        if (event.getCause().root() instanceof Player) {
-            Player plr = (Player) event.getCause().root();
-            if (plr.getItemInHand(HandTypes.MAIN_HAND).isPresent() && plr.hasPermission("huskycrates.wand")) {
-                ItemStack hand = plr.getItemInHand(HandTypes.MAIN_HAND).get();
-                if (hand.getType() == ItemTypes.BLAZE_ROD) {
-                    if (hand.toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
-                        if (!crateUtilities.physicalCrates.containsKey(event.getTargetEntity().getLocation())) {
-                            //System.out.println(event.getTargetEntity().getLocation().getBlockPosition());
-                            event.getTargetEntity().offer(Keys.AI_ENABLED, false);
-                            event.getTargetEntity().offer(Keys.IS_SILENT, true);
-                            crateUtilities.physicalCrates.put(event.getTargetEntity().getLocation(), new PhysicalCrate(event.getTargetEntity().getLocation(), hand.toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString(), this, true));
-                            updatePhysicalCrates();
-                        } else {
-                            event.getTargetEntity().offer(Keys.AI_ENABLED, true);
-                            event.getTargetEntity().offer(Keys.IS_SILENT, false);
-                            crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()).as.remove();
-                            crateUtilities.physicalCrates.remove(event.getTargetEntity().getLocation());
-                            updatePhysicalCrates();
+        if (!(event.getCause().root() instanceof Player)) {
+            return;
+        }
+        Player plr = (Player) event.getCause().root();
+        if (plr.getItemInHand(HandTypes.MAIN_HAND).isPresent() && plr.hasPermission("huskycrates.wand")) {
+            ItemStack hand = plr.getItemInHand(HandTypes.MAIN_HAND).get();
+            if (hand.getType() == ItemTypes.BLAZE_ROD) {
+                if (hand.toContainer().get(DataQuery.of("UnsafeData", "crateID")).isPresent()) {
+                    Entity targetEntity = event.getTargetEntity();
+                    if (!crateUtilities.physicalCrates.containsKey(targetEntity.getLocation())) {
+                        event.getTargetEntity().offer(Keys.AI_ENABLED, false);
+                        event.getTargetEntity().offer(Keys.IS_SILENT, true);
+                        //Damn it Pixelmon
+                        if (targetEntity instanceof EntityStatue) {
+                            ((EntityStatue) targetEntity).setLabel("");
                         }
-                        event.setCancelled(true);
-                        return;
+                        crateUtilities.physicalCrates.put(targetEntity.getLocation(),
+                                new PhysicalCrate(targetEntity.getLocation(), hand.toContainer().get(DataQuery.of("UnsafeData", "crateID")).get().toString(), this, true));
+                        updatePhysicalCrates();
+                    } else {
+                        event.getTargetEntity().offer(Keys.AI_ENABLED, true);
+                        event.getTargetEntity().offer(Keys.IS_SILENT, false);
+                        crateUtilities.physicalCrates.get(targetEntity.getLocation()).as.remove();
+                        crateUtilities.physicalCrates.remove(targetEntity.getLocation());
+                        updatePhysicalCrates();
                     }
+                    event.setCancelled(true);
+                    return;
                 }
             }
+        }
 
-            if (crateUtilities.physicalCrates.containsKey(event.getTargetEntity().getLocation())) {
-                String crateType = crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()).vc.id;
-                VirtualCrate vc = crateUtilities.getVirtualCrate(crateType);
-                //crateUtilities.recognizeChest(te.getLocation());
-                event.setCancelled(true);
-                int keyResult = crateUtilities.isAcceptedKey(crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()), plr.getItemInHand(HandTypes.MAIN_HAND), plr);
-                keyHandler(plr, keyResult, vc, event.getTargetEntity().getLocation(), crateType);
+        if (crateUtilities.physicalCrates.containsKey(event.getTargetEntity().getLocation())) {
+            String crateType = crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()).vc.id;
+            VirtualCrate vc = crateUtilities.getVirtualCrate(crateType);
+            event.setCancelled(true);
+            int keyResult = crateUtilities.isAcceptedKey(crateUtilities.physicalCrates.get(event.getTargetEntity().getLocation()), plr.getItemInHand(HandTypes.MAIN_HAND), plr);
+            keyHandler(plr, keyResult, vc, event.getTargetEntity().getLocation(), crateType);
 
-            }
         }
 
     }

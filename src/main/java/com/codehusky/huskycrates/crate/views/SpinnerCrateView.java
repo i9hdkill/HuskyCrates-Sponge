@@ -29,8 +29,8 @@ import java.util.Random;
  */
 
 public class SpinnerCrateView extends CrateView {
-    private Inventory disp;
-    private Task updater;
+    private final Inventory disp;
+    private final Task updater;
     private int clicks = 0;
     private double dampening = 1.05;
     private int maxClicks = 45; // maximum times the spinner "clicks" in one spin
@@ -47,11 +47,9 @@ public class SpinnerCrateView extends CrateView {
 
         if (virtualCrate.getOptions().containsKey("dampening")) {
             dampening = (double) virtualCrate.getOptions().get("dampening");
-            //HuskyCrates.instance.logger.info("dampening override: " + dampening);
         }
         if (virtualCrate.getOptions().containsKey("maxClicks")) {
             maxClicks = (int) virtualCrate.getOptions().get("maxClicks");
-            //HuskyCrates.instance.logger.info("maxClicks override: " + maxClicks);
         }
         if (virtualCrate.getOptions().containsKey("minClickModifier") || virtualCrate.getOptions().containsKey("maxClickModifier")) {
             int min = (int) virtualCrate.getOptions().get("minClickModifier");
@@ -96,15 +94,11 @@ public class SpinnerCrateView extends CrateView {
         int slotnum = 0;
         for (Inventory e : disp.slots()) {
             if (state == 0 && (slotnum == 4 || slotnum == 22)) {
-
                 e.set(selector);
             } else if (slotnum > 9 && slotnum < 17 && state != 2) {
-                //int itemNum = items.size() - 1 - Math.abs(((slotnum - 10) + (clicks)) % items.size());
-
                 int itemNum = Math.abs(clicks + (slotnum - 9) - 4) % items.size();
                 e.set(((CrateReward) items.get(itemNum)[1]).getDisplayItem());
                 if (slotnum == 13) {
-                    //System.out.println(itemNum);
                     giveToPlayer = (CrateReward) items.get(itemNum)[1];
                 }
             } else if (slotnum != 13) {
@@ -115,9 +109,6 @@ public class SpinnerCrateView extends CrateView {
                 }
             } else if (state == 2) {
                 int itemNum = Math.abs(clicks + (slotnum - 9) - 4) % items.size();
-                /*HuskyCrates.instance.logger.warn("result: " + (itemNum + 1));
-                HuskyCrates.instance.logger.warn("fail: " + (planned != itemNum));
-                HuskyCrates.instance.logger.warn("difference: " + (planned - itemNum));*/
                 giveToPlayer = (CrateReward) items.get(itemNum)[1];
                 e.set(giveToPlayer.getDisplayItem());
             }
@@ -147,19 +138,14 @@ public class SpinnerCrateView extends CrateView {
     private boolean done = false;
 
     private void updateTick() {
-        //revDampening = 1.15;
         waitCurrent++;
-        //int revolutions = (int) Math.floor(clicks / items.size());
-        //once clicks is greater than offset we stop the spinner
         if (waitCurrent == Math.round(updateMax) && trueclicks < maxClicks && tickerState == 0 && !done) {
-            //System.out.println(clicks + " : " + offset);
             waitCurrent = 0;
             updateMax *= dampening;
             updateInv(-1);
             ourplr.playSound(SoundTypes.UI_BUTTON_CLICK, ourplr.getLocation().getPosition(), 0.25);
             clicks++;
             trueclicks++;
-            //HuskyCrates.instance.logger.info(maxClicks + " : " + trueclicks);
         } else if (waitCurrent == Math.round(updateMax) && done) {
             waitCurrent = 0;
             updateMax *= dampening;
@@ -186,7 +172,6 @@ public class SpinnerCrateView extends CrateView {
             ourplr.playSound(SoundTypes.UI_BUTTON_CLICK, ourplr.getLocation().getPosition(), 0.25);
             done = true;
         }
-
     }
 
     public Inventory getInventory() {

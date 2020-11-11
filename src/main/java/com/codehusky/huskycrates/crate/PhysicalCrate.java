@@ -25,7 +25,7 @@ public class PhysicalCrate {
     public Location<World> location;
     public VirtualCrate vc;
     public ArmorStand as = null;
-    public boolean isEntity = false;
+    public boolean isEntity;
     double randomTimeOffset = new Random().nextDouble() * 2000;
     public static Vector3d offset = new Vector3d(0.5, 1, 0.5);
     public HashMap<UUID, LocalDateTime> lastUsed = new HashMap<>();
@@ -38,7 +38,6 @@ public class PhysicalCrate {
     public PhysicalCrate(Location<World> crateLocation, String crateId, HuskyCrates huskyCrates, boolean isEntity) {
         this.location = crateLocation;
         this.vc = huskyCrates.crateUtilities.getVirtualCrate(crateId);
-
         this.isEntity = isEntity;
     }
 

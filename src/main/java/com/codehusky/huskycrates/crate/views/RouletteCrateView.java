@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
  * Created by lokio on 12/29/2016.
  */
 public class RouletteCrateView extends CrateView {
-    private Inventory disp;
-    private Task updater;
+    private final Inventory disp;
+    private final Task updater;
     private boolean stopped = false;
     private CrateReward holder;
     private boolean firedEnd = false;
@@ -60,7 +60,7 @@ public class RouletteCrateView extends CrateView {
                 })
                 .property(InventoryTitle.PROPERTY_NAME, InventoryTitle.of(TextSerializers.FORMATTING_CODE.deserialize(virtualCrate.displayName)))
                 .build(plugin);
-        updateInv(0);
+        updateInv();
         Scheduler scheduler = Sponge.getScheduler();
         Task.Builder taskBuilder = scheduler.createTaskBuilder();
         updater = taskBuilder.execute(this::updateTick).intervalTicks(1).submit(plugin);
@@ -68,7 +68,7 @@ public class RouletteCrateView extends CrateView {
 
     private int tickCount = 0;
 
-    private void updateInv(int state) {
+    private void updateInv() {
         int secRemain = (10 - Math.round(tickCount / 20));
         if (secRemain < 0)
             stopped = true;
@@ -106,8 +106,6 @@ public class RouletteCrateView extends CrateView {
                 } catch (RandomItemSelectionFailureException e1) {
                     plugin.logger.error("Random Item Selection failed in Roulette Crate View: " + vc.displayName);
                 }
-
-                //e.set(((CrateRewardHolder)items.get(Math.round(tickCount/2) % items.size())[1]).getDisplayItem());
             } else {
                 if (stopped && !firedEnd) {
                     if (secRemain < 0) {
@@ -143,7 +141,7 @@ public class RouletteCrateView extends CrateView {
     }
 
     private void updateTick() {
-        updateInv(0);
+        updateInv();
         tickCount++;
     }
 

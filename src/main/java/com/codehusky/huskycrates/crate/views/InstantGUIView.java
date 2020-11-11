@@ -24,12 +24,11 @@ import com.codehusky.huskycrates.crate.config.CrateReward;
 import java.util.concurrent.TimeUnit;
 
 public class InstantGUIView extends CrateView {
-    private Inventory disp;
-    private Task updater;
+    private final Inventory disp;
+    private final Task updater;
     private CrateReward holder = null;
 
     public InstantGUIView(HuskyCrates plugin, Player runner, VirtualCrate virtualCrate) {
-        //System.out.println("AA");
         this.plugin = plugin;
         vc = virtualCrate;
         ourplr = runner;
